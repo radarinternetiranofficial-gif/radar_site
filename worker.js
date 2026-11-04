@@ -16,13 +16,13 @@ export default {
 
     <style>
         :root {
-            --bg: #050810; /* پس‌زمینه تیره‌تر و عمیق‌تر */
+            --bg: #050810;
             --surface: rgba(15, 23, 42, 0.6);
             --text: #f8fafc;
             --muted: #94a3b8;
-            --primary: #10b981; /* سبز نئونی */
-            --secondary: #3b82f6; /* آبی */
-            --accent: #f59e0b; /* طلایی */
+            --primary: #10b981;
+            --secondary: #3b82f6;
+            --accent: #f59e0b;
             --border: rgba(255, 255, 255, 0.08);
             --glow: rgba(16, 185, 129, 0.15);
         }
@@ -30,12 +30,7 @@ export default {
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Vazirmatn', sans-serif; -webkit-tap-highlight-color: transparent; }
         
         body { 
-            background-color: var(--bg); 
-            color: var(--text); 
-            line-height: 1.8; 
-            overflow-x: hidden; 
-            width: 100%;
-            /* گرادیانت‌های نورپردازی مدرن */
+            background-color: var(--bg); color: var(--text); line-height: 1.8; overflow-x: hidden; width: 100%;
             background-image: 
                 radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
                 radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
@@ -44,7 +39,7 @@ export default {
 
         a { text-decoration: none; color: inherit; transition: color 0.3s ease; }
 
-        /* هدر سایت */
+        /* هدر */
         header {
             display: flex; justify-content: space-between; align-items: center;
             padding: 16px 5%; background: rgba(5, 8, 16, 0.8);
@@ -53,27 +48,17 @@ export default {
         }
         .logo { font-size: 1.2rem; font-weight: 900; color: var(--text); display: flex; align-items: center; gap: 10px; letter-spacing: -0.5px; }
         .logo i { color: var(--primary); font-size: 1.4rem; }
-        .nav-links { display: none; } /* در موبایل مخفی است */
+        .nav-links { display: none; }
         
-        /* بخش Hero (بالای سایت) */
-        .hero { 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            text-align: center; padding: 100px 20px 80px; max-width: 900px; margin: 0 auto;
-        }
-        
+        /* Hero */
+        .hero { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 100px 20px 80px; max-width: 900px; margin: 0 auto; }
         .badge {
             background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2);
-            color: var(--primary); padding: 8px 20px; border-radius: 50px;
-            font-size: 0.9rem; margin-bottom: 30px; font-weight: 600;
-            display: inline-flex; align-items: center; gap: 8px;
-            box-shadow: 0 0 30px var(--glow);
+            color: var(--primary); padding: 8px 20px; border-radius: 50px; font-size: 0.9rem; 
+            margin-bottom: 30px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 0 30px var(--glow);
         }
-        
         .hero h1 { font-size: 2.8rem; font-weight: 900; line-height: 1.3; margin-bottom: 24px; letter-spacing: -1px; }
-        .hero h1 span { 
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
+        .hero h1 span { background: linear-gradient(90deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .hero p { color: var(--muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto 40px; }
 
         /* دکمه‌ها */
@@ -88,91 +73,74 @@ export default {
         .btn-outline { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); color: var(--text); }
         .btn-outline:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255,255,255,0.2); transform: translateY(-2px); }
 
-        /* کانتینر اصلی برای بخش‌ها */
+        /* کانتینر */
         .container { max-width: 1200px; margin: 0 auto; padding: 80px 20px; }
-        
         .section-header { text-align: center; margin-bottom: 60px; }
         .section-header h2 { font-size: 2rem; font-weight: 800; margin-bottom: 15px; }
         .section-header p { color: var(--muted); font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
 
-        /* شبکه (Grid) کارت‌ها */
-        .grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+        /* بخش راهنما (جدید) */
+        .guide-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        .guide-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+            padding: 30px; position: relative; display: flex; align-items: flex-start; gap: 20px;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        .guide-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+        .step-number {
+            background: rgba(16, 185, 129, 0.1); color: var(--primary);
+            width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; font-weight: 900; flex-shrink: 0; border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .guide-content h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+        .guide-content p { color: var(--muted); font-size: 0.95rem; }
+        .guide-content code { background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 6px; font-family: monospace; color: var(--secondary); }
 
-        .card {
-            background: var(--surface); backdrop-filter: blur(12px);
-            padding: 32px; border-radius: 20px; border: 1px solid var(--border);
-            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-            position: relative; overflow: hidden;
-        }
+        /* شبکه کارت‌ها */
+        .grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+        .card { background: var(--surface); backdrop-filter: blur(12px); padding: 32px; border-radius: 20px; border: 1px solid var(--border); transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; position: relative; overflow: hidden; }
         .card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.2); box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
-        
-        .card-icon {
-            width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
-            font-size: 1.5rem; margin-bottom: 20px;
-        }
+        .card-icon { width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 20px; }
         .icon-green { background: rgba(16, 185, 129, 0.1); color: var(--primary); }
-        .icon-blue { background: rgba(59, 130, 246, 0.1); color: var(--secondary); }
-        
         .card h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 12px; }
         .card p { color: var(--muted); font-size: 0.95rem; line-height: 1.7; text-align: justify; }
 
-        /* بخش منابع داده */
+        /* منابع داده */
         .sources-list { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-top: 30px; }
-        .source-item {
-            background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border);
-            padding: 10px 20px; border-radius: 50px; font-size: 0.9rem; color: #cbd5e1;
-            display: flex; align-items: center; gap: 8px;
-        }
+        .source-item { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); padding: 10px 20px; border-radius: 50px; font-size: 0.9rem; color: #cbd5e1; display: flex; align-items: center; gap: 8px; }
         .source-item i { color: var(--secondary); }
 
-        /* بخش API (متمایز) */
-        .api-box {
-            background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
-            border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 24px;
-            padding: 40px; text-align: center; position: relative; overflow: hidden;
-        }
-        .api-box::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-            background: linear-gradient(90deg, transparent, var(--accent), transparent);
-        }
+        /* API */
+        .api-box { background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9)); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 24px; padding: 40px; text-align: center; position: relative; overflow: hidden; }
+        .api-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--accent), transparent); }
         .api-box h2 { font-size: 1.8rem; color: var(--accent); margin-bottom: 15px; }
         .api-box p { color: #cbd5e1; max-width: 700px; margin: 0 auto 25px; font-size: 1.05rem; }
-        
-        .condition-box {
-            background: rgba(245, 158, 11, 0.08); border: 1px dashed rgba(245, 158, 11, 0.3);
-            padding: 15px 20px; border-radius: 12px; display: inline-block;
-            color: var(--accent); font-weight: 600; font-size: 0.95rem; margin-bottom: 30px;
-        }
+        .condition-box { background: rgba(245, 158, 11, 0.08); border: 1px dashed rgba(245, 158, 11, 0.3); padding: 15px 20px; border-radius: 12px; display: inline-block; color: var(--accent); font-weight: 600; font-size: 0.95rem; margin-bottom: 30px; }
 
         /* فوتر */
         footer { border-top: 1px solid var(--border); background: rgba(5, 8, 16, 0.9); padding: 60px 20px 30px; text-align: center; }
         .footer-content { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 30px; }
-        
         .social-icons { display: flex; gap: 20px; }
-        .social-icons a { 
-            width: 45px; height: 45px; border-radius: 50%; background: rgba(255, 255, 255, 0.05);
-            display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
-            border: 1px solid var(--border); transition: all 0.3s ease;
-        }
+        .social-icons a { width: 45px; height: 45px; border-radius: 50%; background: rgba(255, 255, 255, 0.05); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border: 1px solid var(--border); transition: all 0.3s ease; }
         .social-icons a:hover { background: var(--primary); color: #000; border-color: var(--primary); transform: translateY(-3px); }
-
         .copyright { color: var(--muted); font-size: 0.85rem; display: flex; flex-direction: column; gap: 10px; align-items: center; }
         .copyright-note { color: #64748b; font-size: 0.8rem; max-width: 600px; line-height: 1.6; }
 
-        /* ریسپانسیو برای دسکتاپ و تبلت */
+        /* ریسپانسیو */
         @media (min-width: 768px) {
             .nav-links { display: flex; gap: 30px; font-size: 0.95rem; font-weight: 500; color: #cbd5e1; }
             .nav-links a:hover { color: var(--primary); }
             .cta-group { flex-direction: row; max-width: none; }
             .hero h1 { font-size: 3.5rem; }
             .hero p { font-size: 1.2rem; }
+            .guide-grid { grid-template-columns: repeat(3, 1fr); }
             .grid { grid-template-columns: repeat(2, 1fr); }
             .api-box { padding: 60px; }
             .footer-content { flex-direction: row; justify-content: space-between; text-align: right; }
             .copyright { align-items: flex-start; text-align: right; }
         }
         @media (min-width: 1024px) {
-            .grid { grid-template-columns: repeat(4, 1fr); } /* 4 ستونه در مانیتور بزرگ */
+            .grid { grid-template-columns: repeat(4, 1fr); }
         }
     </style>
 </head>
@@ -182,14 +150,14 @@ export default {
     <header>
         <div class="logo"><i class="fa-solid fa-satellite-dish"></i> رادار ایران</div>
         <div class="nav-links">
-            <a href="#about">درباره ما</a>
+            <a href="#guide">راهنمای اتصال</a>
             <a href="#features">امکانات</a>
             <a href="#api">API</a>
         </div>
         <a href="https://t.me/Radarinternetiranbot" target="_blank" class="btn btn-outline" style="width: auto; padding: 10px 20px; font-size: 0.9rem;">ورود به ربات</a>
     </header>
 
-    <!-- بخش Hero -->
+    <!-- Hero -->
     <section class="hero">
         <div class="badge"><i class="fa-solid fa-circle-check"></i> نسخه رسمی و پایدار</div>
         <h1>آینده <span>شفافیت</span> در شبکه ایران</h1>
@@ -197,12 +165,50 @@ export default {
         
         <div class="cta-group">
             <a href="https://t.me/Radarinternetiranbot" target="_blank" class="btn btn-primary"><i class="fa-brands fa-telegram"></i> شروع در تلگرام</a>
-            <a href="#api" class="btn btn-outline"><i class="fa-solid fa-code"></i> مشاهده مستندات API</a>
+            <a href="#api" class="btn btn-outline"><i class="fa-solid fa-code"></i> مستندات API</a>
         </div>
     </section>
 
-    <!-- بخش امکانات (Grid) -->
-    <section id="features" class="container">
+    <!-- بخش راهنمای اتصال (بازگشت) -->
+    <section id="guide" class="container" style="padding-top: 0;">
+        <div class="section-header">
+            <h2>چگونه به ربات متصل شویم؟</h2>
+            <p>برای دریافت گزارش‌های زنده و لحظه‌ای، در ۳ مرحله ساده به ما بپیوندید.</p>
+        </div>
+        
+        <div class="guide-grid">
+            <div class="guide-card">
+                <div class="step-number">۱</div>
+                <div class="guide-content">
+                    <h3>ورود به کانال تلگرام</h3>
+                    <p>در پیام‌رسان تلگرام، عبارت <code>@radarinternetiran</code> را جستجو کرده و وارد کانال رسمی شوید.</p>
+                </div>
+            </div>
+            <div class="guide-card">
+                <div class="step-number">۲</div>
+                <div class="guide-content">
+                    <h3>مشاهده پیام سنجاق شده</h3>
+                    <p>در صفحه کانال، به بخش <b>پیام‌های سنجاق شده (Pinned Message)</b> در بالای صفحه مراجعه کنید.</p>
+                </div>
+            </div>
+            <div class="guide-card">
+                <div class="step-number">۳</div>
+                <div class="guide-content">
+                    <h3>شروع کار با ربات</h3>
+                    <p>با کلیک روی لینک موجود در پیام، مستقیماً وارد ربات شوید و دستور <code>/start</code> را ارسال کنید.</p>
+                </div>
+            </div>
+        </div>
+        <p style="text-align:center; margin-top: 30px; font-size: 0.95rem; color: var(--muted);">
+            <i class="fa-brands fa-instagram" style="color:var(--insta); margin-left:5px;"></i> 
+            همچنین می‌توانید در اینستاگرام ما را با آیدی 
+            <a href="https://instagram.com/radar.internet.iran.official" target="_blank" style="color:var(--insta); font-weight:bold;">radar.internet.iran.official</a> 
+            دنبال کنید.
+        </p>
+    </section>
+
+    <!-- امکانات -->
+    <section id="features" class="container" style="padding-top: 0;">
         <div class="section-header">
             <h2>قابلیت‌های کلیدی سامانه</h2>
             <p>ما داده‌های خام شبکه را به اطلاعات کاربردی و قابل فهم تبدیل می‌کنیم.</p>
@@ -232,7 +238,7 @@ export default {
         </div>
     </section>
 
-    <!-- بخش منابع داده -->
+    <!-- منابع داده -->
     <section id="about" class="container" style="padding-top: 0;">
         <div class="section-header">
             <h2>منابع استخراج داده</h2>
@@ -246,8 +252,8 @@ export default {
         </div>
     </section>
 
-    <!-- بخش API -->
-    <section id="api" class="container">
+    <!-- API -->
+    <section id="api" class="container" style="padding-top: 0;">
         <div class="api-box">
             <h2><i class="fa-solid fa-code"></i> API اختصاصی توسعه‌دهندگان</h2>
             <p>داده‌های خام و تحلیل‌شده رادار از طریق یک API مدرن (JSON) در اختیار استارتاپ‌ها، محققان و کسب‌وکارها قرار می‌گیرد. شما می‌توانید از این داده‌ها برای ساخت داشبورد، اپلیکیشن‌های پایش یا تحلیل‌های داده‌ای استفاده کنید.</p>
@@ -277,16 +283,11 @@ export default {
     </footer>
 
     <script>
-        // تنظیم سال به صورت خودکار
         document.getElementById('year').textContent = new Date().getFullYear();
-
-        // اسکرول نرم برای لینک‌های منو
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
-                });
+                document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
             });
         });
     </script>
