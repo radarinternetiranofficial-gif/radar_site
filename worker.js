@@ -4,8 +4,8 @@ export default {
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <!-- ✅ تگ تایید گوگل -->
-    <meta name="google-site-verification" content="google413bb3b843c5a213" />
+    <!-- ✅ تگ تایید گوگل (جدید) -->
+    <meta name="google-site-verification" content="Oskdq7_86up9xROsMJqIpKZ_cTczPZ5ZCNroOT-bnCc" />
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
