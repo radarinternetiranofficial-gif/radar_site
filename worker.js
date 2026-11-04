@@ -4,7 +4,8 @@ export default {
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <!-- ⚠️ تگ تایید گوگل را دقیقاً اینجا قرار دهید -->
+    <!-- ✅ تگ تایید گوگل (وارد شد) -->
+    <meta name="google-site-verification" content="google413bb3b843c5a213" />
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -79,7 +80,7 @@ export default {
         .section-header h2 { font-size: 2rem; font-weight: 800; margin-bottom: 15px; }
         .section-header p { color: var(--muted); font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
 
-        /* بخش راهنما (جدید) */
+        /* بخش راهنما */
         .guide-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
         .guide-card {
             background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
@@ -169,7 +170,7 @@ export default {
         </div>
     </section>
 
-    <!-- بخش راهنمای اتصال (بازگشت) -->
+    <!-- راهنما -->
     <section id="guide" class="container" style="padding-top: 0;">
         <div class="section-header">
             <h2>چگونه به ربات متصل شویم؟</h2>
