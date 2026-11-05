@@ -1,16 +1,50 @@
 export default {
   async fetch(request, env, ctx) {
+    // گرفتن تاریخ امروز برای نمایش بروزرسانی
+    const today = new Date().toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' });
+
     const htmlContent = `
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <!-- ✅ تگ تایید گوگل (جدید) -->
+    <!-- ✅ تگ تایید گوگل (دست نزن) -->
     <meta name="google-site-verification" content="Oskdq7_86up9xROsMJqIpKZ_cTczPZ5ZCNroOT-bnCc" />
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>رادار اینترنت ایران | زیرساخت هوشمند پایش داده‌های شبکه</title>
-    <meta name="description" content="رادار اینترنت ایران، زیرساخت مستقل و رسمی برای تحلیل، پایش لحظه‌ای کیفیت، سانسور و اختلالات اینترنت بر پایه داده‌های OONI، RIPE و Cloudflare Radar.">
+    
+    <!-- 🚀 سئو (SEO) قوی -->
+    <title>رادار اینترنت ایران | وضعیت لحظه‌ای اختلالات، سانسور و کیفیت شبکه</title>
+    <meta name="description" content="رادار اینترنت ایران، سامانه رسمی و هوشمند پایش آنلاین شبکه. مشاهده وضعیت قطعی اینترنت، فیلترینگ، تست سرعت و کیفیت اپراتورهای مخابراتی بر پایه داده‌های OONI و RIPE.">
+    <meta name="keywords" content="رادار اینترنت ایران, وضعیت اینترنت, قطعی اینترنت, فیلترینگ اینترنت, تست سرعت اینترنت, کیفیت شبکه, OONI, RIPE, کلادفلر">
+    <meta name="author" content="رادار اینترنت ایران">
+    <meta name="robots" content="index, follow">
+
+    <!-- 🚀 داده‌های ساختاریافته برای گوگل (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "رادار اینترنت ایران",
+      "alternateName": "Radar Internet Iran",
+      "url": "https://radar-site-1.radar-internet-iran-official.workers.dev/",
+      "description": "سامانه رسمی پایش لحظه‌ای کیفیت، سانسور و اختلالات اینترنت در ایران.",
+      "inLanguage": "fa-IR"
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "رادار اینترنت ایران",
+      "url": "https://radar-site-1.radar-internet-iran-official.workers.dev/",
+      "logo": "https://cdn-icons-png.flaticon.com/512/2933/2933942.png",
+      "sameAs": [
+        "https://t.me/radarinternetiran",
+        "https://instagram.com/radar.internet.iran.official"
+      ]
+    }
+    </script>
     
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -104,6 +138,11 @@ export default {
         .source-item { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); padding: 10px 20px; border-radius: 50px; font-size: 0.9rem; color: #cbd5e1; display: flex; align-items: center; gap: 8px; }
         .source-item i { color: var(--secondary); }
 
+        /* بخش جدید سئو شده */
+        .seo-content { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 40px; margin-top: 40px; }
+        .seo-content h3 { color: var(--primary); font-size: 1.3rem; margin-bottom: 15px; }
+        .seo-content p { color: var(--muted); font-size: 0.95rem; text-align: justify; margin-bottom: 15px; line-height: 1.9; }
+
         .api-box { background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9)); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 24px; padding: 40px; text-align: center; position: relative; overflow: hidden; }
         .api-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--accent), transparent); }
         .api-box h2 { font-size: 1.8rem; color: var(--accent); margin-bottom: 15px; }
@@ -138,17 +177,18 @@ export default {
 <body>
 
     <header>
-        <div class="logo"><i class="fa-solid fa-satellite-dish"></i> رادار ایران</div>
+        <div class="logo"><i class="fa-solid fa-satellite-dish"></i> رادار اینترنت ایران</div>
         <div class="nav-links">
             <a href="#guide">راهنمای اتصال</a>
             <a href="#features">امکانات</a>
+            <a href="#about">درباره ما</a>
             <a href="#api">API</a>
         </div>
         <a href="https://t.me/Radarinternetiranbot" target="_blank" class="btn btn-outline" style="width: auto; padding: 10px 20px; font-size: 0.9rem;">ورود به ربات</a>
     </header>
 
     <section class="hero">
-        <div class="badge"><i class="fa-solid fa-circle-check"></i> نسخه رسمی و پایدار</div>
+        <div class="badge"><i class="fa-solid fa-bolt"></i> آخرین بروزرسانی شبکه: ${today}</div>
         <h1>آینده <span>شفافیت</span> در شبکه ایران</h1>
         <p>زیرساخت مستقل پایش داده‌های شبکه. ما با تحلیل لحظه‌ای ترافیک و داده‌های جهانی، وضعیت کیفیت، اختلالات و سانسور اینترنت را دقیق به شما نشان می‌دهیم.</p>
         
@@ -158,7 +198,16 @@ export default {
         </div>
     </section>
 
-    <section id="guide" class="container" style="padding-top: 0;">
+    <!-- بخش سئو شده: درباره وضعیت اینترنت -->
+    <section id="about" class="container" style="padding-top: 0; padding-bottom: 20px;">
+        <div class="seo-content">
+            <h3>وضعیت اینترنت ایران در یک نگاه</h3>
+            <p>در دنیای امروز، دسترسی به یک <strong>اینترنت پایدار و باکیفیت</strong> یکی از اصلی‌ترین نیازهای کاربران است. سامانه <strong>رادار اینترنت ایران</strong> با هدف شفاف‌سازی وضعیت شبکه کشور طراحی شده است. ما به صورت لحظه‌ای <strong>قطعی اینترنت</strong>، اختلالات شبکه، <strong>فیلترینگ</strong> و کیفیت سرویس‌دهی اپراتورهای مختلف (همراه اول، ایرانسل، مخابرات و...) را پایش می‌کنیم.</p>
+            <p>با استفاده از داده‌های پروژه جهانی <strong>OONI</strong> و <strong>Cloudflare Radar</strong>، شما می‌توانید از وضعیت دسترسی به سرویس‌های داخلی و خارجی، سرعت واقعی اینترنت و میزان سانسور اعمال شده بر شبکه مطلع شوید. تمامی این اطلاعات از طریق ربات تلگرام ما به صورت رایگان و دقیق در اختیار شما قرار می‌گیرد.</p>
+        </div>
+    </section>
+
+    <section id="guide" class="container" style="padding-top: 40px;">
         <div class="section-header">
             <h2>چگونه به ربات متصل شویم؟</h2>
             <p>برای دریافت گزارش‌های زنده و لحظه‌ای، در ۳ مرحله ساده به ما بپیوندید.</p>
@@ -187,12 +236,6 @@ export default {
                 </div>
             </div>
         </div>
-        <p style="text-align:center; margin-top: 30px; font-size: 0.95rem; color: var(--muted);">
-            <i class="fa-brands fa-instagram" style="color:var(--insta); margin-left:5px;"></i> 
-            همچنین می‌توانید در اینستاگرام ما را با آیدی 
-            <a href="https://instagram.com/radar.internet.iran.official" target="_blank" style="color:var(--insta); font-weight:bold;">radar.internet.iran.official</a> 
-            دنبال کنید.
-        </p>
     </section>
 
     <section id="features" class="container" style="padding-top: 0;">
@@ -225,7 +268,7 @@ export default {
         </div>
     </section>
 
-    <section id="about" class="container" style="padding-top: 0;">
+    <section class="container" style="padding-top: 0;">
         <div class="section-header">
             <h2>منابع استخراج داده</h2>
             <p>اطلاعات ما بدون هیچ‌گونه سوگیری، از معتبرترین منابع بین‌المللی پردازش می‌شود.</p>
@@ -238,7 +281,7 @@ export default {
         </div>
     </section>
 
-    <section id="api" class="container" style="padding-top: 0;">
+    <section id="api" class="container" style="padding-top: 40px;">
         <div class="api-box">
             <h2><i class="fa-solid fa-code"></i> API اختصاصی توسعه‌دهندگان</h2>
             <p>داده‌های خام و تحلیل‌شده رادار از طریق یک API مدرن (JSON) در اختیار استارتاپ‌ها، محققان و کسب‌وکارها قرار می‌گیرد. شما می‌توانید از این داده‌ها برای ساخت داشبورد، اپلیکیشن‌های پایش یا تحلیل‌های داده‌ای استفاده کنید.</p>
@@ -260,7 +303,7 @@ export default {
             </div>
             
             <div class="copyright">
-                <p>© <span id="year">2026</span> رادار اینترنت ایران. تمامی حقوق محفوظ است.</p>
+                <p>© <span id="year"></span> رادار اینترنت ایران. تمامی حقوق محفوظ است.</p>
                 <p class="copyright-note"><i class="fa-solid fa-lock"></i> هرگونه کپی‌برداری از داده‌ها، آمار و طراحی این سامانه بدون ذکر منبع ممنوع بوده و پیگرد قانونی دارد.</p>
             </div>
         </div>
