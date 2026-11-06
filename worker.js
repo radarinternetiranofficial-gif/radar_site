@@ -1,316 +1,382 @@
 export default {
   async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+
+    // ==================== 1. API for Client IP ====================
+    if (url.pathname === '/api/myip') {
+      const clientIP = request.headers.get('CF-Connecting-IP') || "نامشخص";
+      const country = request.cf?.country || "نامشخص";
+      const city = request.cf?.city || "نامشخص";
+      return new Response(JSON.stringify({ ip: clientIP, country, city }), {
+        headers: { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" }
+      });
+    }
+
+    // ==================== 2. API for Ads Request Form ====================
+    if (url.pathname === '/api/ads_request' && request.method === 'POST') {
+      try {
+        const body = await request.json();
+        const { fname, lname, business, phone, reqType, desc } = body;
+        
+        // متن پیام ارسالی به ادمین
+        const msg = `📢 <b>درخواست جدید (${reqType}) از سایت</b>\n\n👤 نام و نام خانوادگی: <b>${fname} ${lname}</b>\n💼 حوزه کاری/برند: ${business}\n📞 شماره تماس: <code>${phone}</code>\n\n📝 <b>توضیحات:</b>\n<i>${desc || "توضیحی ارائه نشده است."}</i>\n\n⏰ زمان ثبت: ${new Date().toLocaleString('fa-IR')}`;
+        
+        const ADMIN_IDS = ["8344700031", "7652496428"];
+        let sent = false;
+        for (const adminId of ADMIN_IDS) {
+          const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: adminId, text: msg, parse_mode: 'HTML' })
+          });
+          if (res.ok) sent = true;
+        }
+        
+        if (sent) {
+          return new Response(JSON.stringify({ ok: true, message: "درخواست با موفقیت ارسال شد" }), {
+            headers: { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" }
+          });
+        } else {
+          throw new Error("خطا در ارتباط با تلگرام");
+        }
+      } catch (e) {
+        return new Response(JSON.stringify({ ok: false, error: e.message }), {
+          status: 500, headers: { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+    }
+
+    // ==================== 3. Main HTML Dashboard ====================
     const today = new Date().toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' });
 
     const htmlContent = `
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <!-- ✅ تگ تایید گوگل (دست نزنید) -->
+    <!-- ✅ تگ تایید گوگل -->
     <meta name="google-site-verification" content="Oskdq7_86up9xROsMJqIpKZ_cTczPZ5ZCNroOT-bnCc" />
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>رادار اینترنت ایران | داشبورد زنده وضعیت شبکه و اختلالات</title>
-    <meta name="description" content="رادار اینترنت ایران، زیرساخت داده‌محور برای پایش آنلاین اختلالات، سانسور و کیفیت اینترنت. مشاهده وضعیت زنده اپراتورها و ترافیک شبکه.">
+    <title>رادار اینترنت ایران | داشبورد زنده وضعیت شبکه</title>
+    <meta name="description" content="رادار اینترنت ایران، سامانه رسمی و هوشمند پایش آنلاین شبکه. مشاهده وضعیت قطعی، فیلترینگ، آی‌پی و درخواست اسپانسری.">
     
-    <!-- داده‌های ساختاریافته برای سئو -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "رادار اینترنت ایران",
-      "url": "https://radar-site-1.radar-internet-iran-official.workers.dev/",
-      "description": "زیرساخت داده‌محور پایش زنده اینترنت ایران."
-    }
-    </script>
-
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         :root {
-            --bg: #030712; /* پس زمینه بسیار تیره و عمیق */
-            --panel: rgba(17, 24, 39, 0.7);
+            --bg: #030712;
+            --surface: rgba(17, 24, 39, 0.7);
             --text: #f9fafb;
             --muted: #9ca3af;
             --primary: #10b981;
-            --primary-glow: rgba(16, 185, 129, 0.2);
             --blue: #3b82f6;
             --gold: #f59e0b;
             --border: rgba(255, 255, 255, 0.08);
+            --sidebar-width: 260px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Vazirmatn', sans-serif; -webkit-tap-highlight-color: transparent; }
-        
-        body { 
-            background-color: var(--bg); color: var(--text); line-height: 1.8; overflow-x: hidden;
-            /* نورپردازی پس زمینه */
-            background-image: radial-gradient(circle at 50% -20%, rgba(16, 185, 129, 0.15), transparent 40%);
-            background-attachment: fixed;
-        }
-
+        body { background-color: var(--bg); color: var(--text); line-height: 1.8; overflow-x: hidden; display: flex; height: 100vh; background-image: radial-gradient(circle at 50% -20%, rgba(16, 185, 129, 0.1), transparent 40%); background-attachment: fixed; }
         a { text-decoration: none; color: inherit; transition: 0.3s; }
 
-        /* هدر */
-        header {
-            position: fixed; top: 0; width: 100%; z-index: 1000;
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 5%; background: rgba(3, 7, 18, 0.8);
-            backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
-        }
-        .logo { font-size: 1.2rem; font-weight: 900; display: flex; align-items: center; gap: 10px; }
-        .logo i { color: var(--primary); font-size: 1.5rem; animation: pulse 2s infinite; }
+        /* سایدبار */
+        .sidebar { width: var(--sidebar-width); background: rgba(3, 7, 18, 0.95); backdrop-filter: blur(20px); border-left: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; position: fixed; top: 0; right: 0; height: 100vh; z-index: 1000; transition: 0.3s; }
+        .logo { font-size: 1.3rem; font-weight: 900; display: flex; align-items: center; gap: 10px; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .logo i { color: var(--primary); font-size: 1.6rem; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         
-        .nav-links { display: none; font-size: 0.9rem; color: var(--muted); font-weight: 500; gap: 25px; }
-        .nav-links a:hover { color: var(--primary); }
+        .nav-menu { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 12px; color: var(--muted); font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 0.95rem; }
+        .nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+        .nav-item.active { background: rgba(16, 185, 129, 0.1); color: var(--primary); border-right: 3px solid var(--primary); }
+        .nav-item i { width: 20px; text-align: center; font-size: 1.1rem; }
 
-        /* دکمه‌ها */
-        .btn {
-            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-            padding: 12px 24px; border-radius: 10px; font-weight: 700; font-size: 0.95rem;
-            transition: 0.3s; cursor: pointer; border: none;
+        .sidebar-footer { padding-top: 20px; border-top: 1px solid var(--border); text-align: center; }
+        .btn-tg { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: var(--blue); color: #fff; border-radius: 10px; font-weight: bold; font-size: 0.9rem; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); border: none; cursor: pointer; }
+        .btn-tg:hover { background: #2563eb; transform: translateY(-2px); }
+
+        /* محتوا */
+        .main-content { flex: 1; margin-right: var(--sidebar-width); padding: 40px; overflow-y: auto; height: 100vh; }
+        .tab-content { display: none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .page-header { margin-bottom: 30px; }
+        .page-header h1 { font-size: 2rem; font-weight: 900; margin-bottom: 10px; }
+        .page-header p { color: var(--muted); font-size: 1rem; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: var(--surface); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 16px; padding: 25px; transition: 0.3s; }
+        .card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-3px); }
+
+        /* فرم تبلیغات */
+        .info-box {
+            background: rgba(245, 158, 11, 0.05); border-right: 4px solid var(--gold);
+            padding: 20px; border-radius: 12px; margin-bottom: 30px; text-align: justify;
         }
-        .btn-primary { background: var(--primary); color: #000; box-shadow: 0 4px 15px var(--primary-glow); }
-        .btn-primary:hover { background: #059669; transform: translateY(-2px); }
-        .btn-glass { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text); }
-        .btn-glass:hover { background: rgba(255,255,255,0.1); }
+        .info-box h3 { color: var(--gold); margin-bottom: 10px; font-size: 1.2rem; }
+        .info-box p { color: var(--muted); font-size: 0.95rem; line-height: 1.9; }
 
-        /* بخش Hero و داشبورد */
-        .hero { padding: 130px 20px 60px; text-align: center; max-width: 1000px; margin: 0 auto; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 0.9rem; font-weight: 600; }
+        .form-control { width: 100%; padding: 14px 16px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: inherit; font-size: 1rem; transition: 0.3s; }
+        .form-control:focus { outline: none; border-color: var(--primary); background: rgba(16, 185, 129, 0.05); }
+        select.form-control { appearance: none; cursor: pointer; }
+        textarea.form-control { resize: vertical; min-height: 100px; }
         
-        .status-badge {
-            display: inline-flex; align-items: center; gap: 8px;
-            background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);
-            color: var(--primary); padding: 6px 16px; border-radius: 50px;
-            font-size: 0.85rem; font-weight: 700; margin-bottom: 25px;
-        }
-        .status-dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 10px var(--primary); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn-submit { width: 100%; padding: 15px; background: var(--primary); color: #000; font-weight: bold; font-size: 1.1rem; border: none; border-radius: 10px; cursor: pointer; transition: 0.3s; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .btn-submit:hover { background: #059669; }
+        .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; }
+        .alert { padding: 15px; border-radius: 10px; margin-bottom: 20px; display: none; font-weight: 600; text-align: center; }
+        .alert-success { background: rgba(16, 185, 129, 0.1); color: var(--primary); border: 1px solid var(--primary); }
+        .alert-error { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; }
 
-        .hero h1 { font-size: 2.5rem; font-weight: 900; line-height: 1.3; margin-bottom: 20px; }
-        .hero h1 span { color: var(--primary); }
-        .hero p { color: var(--muted); font-size: 1.05rem; max-width: 650px; margin: 0 auto 40px; }
+        /* ابزار آی‌پی */
+        .ip-container { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 20px; }
+        .ip-icon { font-size: 3rem; color: var(--primary); margin-bottom: 20px; }
+        .ip-value { font-size: 2.5rem; font-weight: 900; color: var(--text); letter-spacing: 2px; margin: 15px 0; direction: ltr; }
+        .ip-details { display: flex; gap: 20px; justify-content: center; margin-top: 20px; }
+        .ip-badge { background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 8px 20px; border-radius: 50px; font-size: 0.9rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+        .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* داشبورد زنده (Bento Grid) */
-        .dashboard-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 900px; margin: 0 auto 60px;
-        }
-        @media(min-width: 768px) { .dashboard-grid { grid-template-columns: repeat(4, 1fr); } }
-        
-        .dash-card {
-            background: var(--panel); backdrop-filter: blur(10px);
-            border: 1px solid var(--border); border-radius: 16px;
-            padding: 20px; text-align: right; position: relative; overflow: hidden;
-        }
-        .dash-card::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
-            background: linear-gradient(90deg, transparent, var(--border), transparent);
-        }
-        .dash-card h4 { color: var(--muted); font-size: 0.85rem; font-weight: 500; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
-        .dash-card .value { font-size: 1.6rem; font-weight: 900; display: flex; align-items: baseline; gap: 5px; }
-        .dash-card .unit { font-size: 0.8rem; color: var(--muted); font-weight: normal; }
-        
-        .val-green { color: var(--primary); }
-        .val-red { color: #ef4444; }
-        .val-blue { color: var(--blue); }
-
-        /* بخش‌بندی محتوا */
-        .container { max-width: 1100px; margin: 0 auto; padding: 60px 20px; }
-        .section-title { text-align: center; margin-bottom: 40px; }
-        .section-title h2 { font-size: 1.8rem; font-weight: 900; margin-bottom: 10px; }
-        .section-title p { color: var(--muted); font-size: 0.95rem; }
-
-        /* کارت‌های امکانات */
-        .features-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-        @media(min-width: 768px) { .features-grid { grid-template-columns: repeat(3, 1fr); } }
-        
-        .feature-card {
-            background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
-            padding: 30px; transition: 0.3s;
-        }
-        .feature-card:hover { border-color: rgba(16, 185, 129, 0.4); transform: translateY(-3px); }
-        .feature-icon {
-            width: 45px; height: 45px; border-radius: 12px; background: rgba(16, 185, 129, 0.1);
-            color: var(--primary); display: flex; align-items: center; justify-content: center;
-            font-size: 1.3rem; margin-bottom: 20px;
-        }
-        .feature-card h3 { font-size: 1.1rem; margin-bottom: 10px; font-weight: 700; }
-        .feature-card p { color: var(--muted); font-size: 0.9rem; text-align: justify; }
-
-        /* راهنما */
-        .steps-container { display: flex; flex-direction: column; gap: 15px; max-width: 700px; margin: 0 auto; }
-        .step-item {
-            display: flex; align-items: center; gap: 15px; background: var(--panel);
-            border: 1px solid var(--border); padding: 20px; border-radius: 16px;
-        }
-        .step-num { background: var(--primary); color: #000; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; flex-shrink: 0; }
-        .step-text h4 { font-size: 1rem; margin-bottom: 5px; }
-        .step-text p { font-size: 0.9rem; color: var(--muted); }
-
-        /* API */
-        .api-section {
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.5), rgba(245, 158, 11, 0.05));
-            border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 20px;
-            padding: 40px 30px; text-align: center; margin-top: 40px;
-        }
-        .api-section h2 { color: var(--gold); font-size: 1.5rem; margin-bottom: 15px; }
-        .api-section p { color: var(--muted); font-size: 0.95rem; margin-bottom: 25px; max-width: 600px; margin-left: auto; margin-right: auto; }
-
-        /* فوتر */
-        footer { border-top: 1px solid var(--border); padding: 40px 20px; text-align: center; background: rgba(3, 7, 18, 0.8); }
-        .footer-socials { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
-        .footer-socials a { width: 40px; height: 40px; border-radius: 10px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; border: 1px solid var(--border); }
-        .footer-socials a:hover { background: var(--primary); color: #000; }
-        .footer-text { color: var(--muted); font-size: 0.85rem; }
-        .footer-text span { color: #ef4444; font-weight: bold; }
-
-        @media (min-width: 768px) {
-            .nav-links { display: flex; }
-            .hero h1 { font-size: 3.5rem; }
-            .hero { padding-top: 160px; }
-            .dash-card .value { font-size: 2rem; }
+        /* موبایل */
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; height: 70px; top: auto; bottom: 0; right: 0; flex-direction: row; border-left: none; border-top: 1px solid var(--border); padding: 0 10px; justify-content: space-around; align-items: center; }
+            .logo, .sidebar-footer { display: none; }
+            .nav-menu { flex-direction: row; justify-content: space-around; width: 100%; gap: 0; }
+            .nav-item { flex-direction: column; padding: 8px; font-size: 0.75rem; gap: 4px; border-right: none; border-radius: 8px; }
+            .nav-item.active { border-right: none; border-bottom: 3px solid var(--primary); border-radius: 8px 8px 0 0; }
+            .nav-item i { font-size: 1.3rem; }
+            .main-content { margin-right: 0; padding: 20px; height: calc(100vh - 70px); padding-bottom: 90px; }
+            .grid-2, .form-row { grid-template-columns: 1fr; }
+            .page-header h1 { font-size: 1.6rem; }
         }
     </style>
 </head>
 <body>
 
-    <header>
+    <!-- منوی کناری -->
+    <aside class="sidebar">
         <div class="logo"><i class="fa-solid fa-satellite-dish"></i> رادار ایران</div>
-        <div class="nav-links">
-            <a href="#dashboard">داشبورد زنده</a>
-            <a href="#features">امکانات</a>
-            <a href="#how-to">راهنمای اتصال</a>
-            <a href="#api">API</a>
+        <div class="nav-menu">
+            <div class="nav-item active" onclick="switchTab('dashboard', this)"><i class="fa-solid fa-chart-pie"></i> داشبورد</div>
+            <div class="nav-item" onclick="switchTab('ip-tool', this)"><i class="fa-solid fa-network-wired"></i> آی‌پی من</div>
+            <div class="nav-item" onclick="switchTab('ads', this)"><i class="fa-solid fa-bullhorn"></i> درخواست اسپانسری</div>
+            <div class="nav-item" onclick="switchTab('api', this)"><i class="fa-solid fa-code"></i> API</div>
         </div>
-        <a href="https://t.me/Radarinternetiranbot" target="_blank" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem;">ورود به ربات</a>
-    </header>
+        <div class="sidebar-footer">
+            <a href="https://t.me/Radarinternetiranbot" target="_blank" class="btn-tg"><i class="fa-brands fa-telegram"></i> ورود به ربات</a>
+        </div>
+    </aside>
 
-    <!-- بخش اصلی -->
-    <section class="hero">
-        <div class="status-badge">
-            <div class="status-dot"></div>
-            سیستم آنلاین است • بروزرسانی: ${today}
-        </div>
-        <h1>شفافیت در <span>شبکه</span>، بدون واسطه</h1>
-        <p>رادار اینترنت ایران، زیرساخت داده‌محور برای پایش آنلاین اختلالات، سانسور و کیفیت اینترنت. داده‌های واقعی از منابع جهانی، مستقیماً در اختیار شما.</p>
+    <!-- محتوای اصلی -->
+    <main class="main-content">
         
-        <div class="dashboard-grid" id="dashboard">
-            <div class="dash-card">
-                <h4><i class="fa-solid fa-wifi"></i> وضعیت کلی</h4>
-                <div class="value val-green">پایدار</div>
+        <!-- تب 1: داشبورد -->
+        <div id="dashboard" class="tab-content active">
+            <div class="page-header">
+                <h1>داشبورد وضعیت شبکه</h1>
+                <p>آخرین بروزرسانی: ${today} • سیستم آنلاین است</p>
             </div>
-            <div class="dash-card">
-                <h4><i class="fa-solid fa-gauge-high"></i> پینگ میانگین</h4>
-                <div class="value val-blue">--- <span class="unit">ms</span></div>
-            </div>
-            <div class="dash-card">
-                <h4><i class="fa-solid fa-ban"></i> سانسور / مسدودی</h4>
-                <div class="value val-red">--- <span class="unit">%</span></div>
-            </div>
-            <div class="dash-card">
-                <h4><i class="fa-solid fa-users"></i> کاربران فعال</h4>
-                <div class="value">---</div>
-            </div>
-        </div>
-        
-        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-            <a href="https://t.me/Radarinternetiranbot" target="_blank" class="btn btn-primary"><i class="fa-brands fa-telegram"></i> دریافت گزارش کامل</a>
-            <a href="#features" class="btn btn-glass"><i class="fa-solid fa-arrow-down"></i> مشاهده امکانات</a>
-        </div>
-    </section>
-
-    <!-- امکانات -->
-    <section class="container" id="features">
-        <div class="section-title">
-            <h2>زیرساخت پایش ما</h2>
-            <p>ما داده‌های خام را به اطلاعات کاربردی تبدیل می‌کنیم.</p>
-        </div>
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon"><i class="fa-solid fa-chart-line"></i></div>
-                <h3>نمودارهای زنده</h3>
-                <p>روند ۷ روزه، آمار ۲۴ ساعته و نقشه حرارتی استانی برای بررسی دقیق کیفیت شبکه در هر ساعت از شبانه‌روز.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon"><i class="fa-solid fa-shield-halved"></i></div>
-                <h3>تحلیل سانسور (OONI)</h3>
-                <p>شناسایی دقیق سایت‌های مسدود شده و دستکاری بسته‌های شبکه با تکیه بر داده‌های پروژه جهانی OONI.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon"><i class="fa-solid fa-satellite"></i></div>
-                <h3>پینگ مستقیم</h3>
-                <p>ارسال لحظه‌ای بسته‌های داده به سایت‌های داخلی و خارجی برای سنجش دقیق دسترسی‌پذیری.</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- راهنما -->
-    <section class="container" id="how-to">
-        <div class="section-title">
-            <h2>چگونه شروع کنیم؟</h2>
-            <p>در کمتر از ۱ دقیقه به سیستم متصل شوید.</p>
-        </div>
-        <div class="steps-container">
-            <div class="step-item">
-                <div class="step-num">۱</div>
-                <div class="step-text">
-                    <h4>ورود به کانال رسمی</h4>
-                    <p>در تلگرام عبارت <code>@radarinternetiran</code> را جستجو کرده و وارد کانال شوید.</p>
+            <div class="grid-2" style="margin-bottom: 20px;">
+                <div class="card" style="text-align: center;">
+                    <h3 style="color: var(--muted); font-size: 0.9rem; margin-bottom: 10px;"><i class="fa-solid fa-wifi"></i> وضعیت کلی</h3>
+                    <div style="font-size: 1.8rem; font-weight: 900; color: var(--primary);">پایدار</div>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <h3 style="color: var(--muted); font-size: 0.9rem; margin-bottom: 10px;"><i class="fa-solid fa-shield-halved"></i> سطح فیلترینگ</h3>
+                    <div style="font-size: 1.8rem; font-weight: 900; color: var(--gold);">متوسط</div>
                 </div>
             </div>
-            <div class="step-item">
-                <div class="step-num">۲</div>
-                <div class="step-text">
-                    <h4>یافتن لینک ربات</h4>
-                    <p>در کانال، به پیام‌های سنجاق شده (Pinned) مراجعه کرده و روی لینک ربات کلیک کنید.</p>
-                </div>
+            <div class="card" style="text-align: center; padding: 40px 20px;">
+                <h2 style="font-size: 1.5rem; margin-bottom: 15px;">گزارش کامل در تلگرام</h2>
+                <p style="color: var(--muted); margin-bottom: 25px;">برای مشاهده نمودارهای زنده، نقشه حرارتی و تست سرعت، وارد ربات شوید.</p>
+                <a href="https://t.me/Radarinternetiranbot" target="_blank" class="btn-tg" style="display: inline-flex; width: auto; padding: 12px 30px;"><i class="fa-brands fa-telegram"></i> دریافت گزارش از ربات</a>
             </div>
-            <div class="step-item">
-                <div class="step-num">۳</div>
-                <div class="step-text">
-                    <h4>شروع پایش</h4>
-                    <p>دستور <code>/start</code> را ارسال کنید و از داشبورد اختصاصی خود استفاده کنید.</p>
+        </div>
+
+        <!-- تب 2: ابزار آی‌پی -->
+        <div id="ip-tool" class="tab-content">
+            <div class="page-header">
+                <h1>ابزار تشخیص آی‌پی</h1>
+                <p>آی‌پی و موقعیت جغرافیایی شما بر اساس اتصال به شبکه.</p>
+            </div>
+            <div class="card ip-container">
+                <div class="ip-icon"><i class="fa-solid fa-globe"></i></div>
+                <h3 style="color: var(--muted);">آی‌پی فعلی شما</h3>
+                <div id="ip-loading">
+                    <div class="spinner"></div>
+                    <p style="color: var(--muted); font-size: 0.9rem;">در حال دریافت اطلاعات...</p>
+                </div>
+                <div id="ip-result" style="display: none;">
+                    <div class="ip-value" id="user-ip">---</div>
+                    <div class="ip-details">
+                        <div class="ip-badge"><i class="fa-solid fa-flag"></i> کشور: <span id="user-country" style="color: var(--text); font-weight: bold; margin-right: 5px;">---</span></div>
+                        <div class="ip-badge"><i class="fa-solid fa-location-dot"></i> شهر: <span id="user-city" style="color: var(--text); font-weight: bold; margin-right: 5px;">---</span></div>
+                    </div>
                 </div>
             </div>
         </div>
-    </section>
 
-    <!-- بخش API -->
-    <section class="container" id="api">
-        <div class="api-section">
-            <h2><i class="fa-solid fa-code"></i> دسترسی به داده‌های خام</h2>
-            <p>توسعه‌دهندگان و کسب‌وکارها می‌توانند از طریق API اختصاصی، به داده‌های JSON رادار متصل شوند و سرویس‌های خود را بسازند.</p>
-            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(245, 158, 11, 0.2); padding: 10px; border-radius: 10px; display: inline-block; color: var(--gold); font-size: 0.85rem; margin-bottom: 20px;">
-                <i class="fa-solid fa-handshake"></i> شرط استفاده: ذکر «رادار اینترنت ایران» به عنوان اسپانسر رسمی
+        <!-- تب 3: درخواست اسپانسری -->
+        <div id="ads" class="tab-content">
+            <div class="page-header">
+                <h1>فرصت‌های همکاری و اسپانسری</h1>
+                <p>برند خود را به هزاران کاربر فعال و متخصص در حوزه فناوری معرفی کنید.</p>
             </div>
-            <br>
-            <a href="https://t.me/Adddddddm" target="_blank" class="btn btn-glass" style="border-color: var(--gold); color: var(--gold);"><i class="fa-solid fa-paper-plane"></i> درخواست کلید API</a>
-        </div>
-    </section>
+            
+            <div class="card" style="max-width: 650px; margin: 0 auto;">
+                
+                <!-- متن رسمی معرفی -->
+                <div class="info-box">
+                    <h3><i class="fa-solid fa-handshake"></i> چرا با رادار اینترنت ایران همکاری کنیم؟</h3>
+                    <p>پلتفرم «رادار اینترنت ایران» با ارائه داده‌های دقیق و لحظه‌ای از وضعیت شبکه، مخاطبان خاص و ارزشمندی را جذب کرده است. این کاربران شامل متخصصان IT، توسعه‌دهندگان، فعالان حوزه دیجیتال و کاربران عمومی علاقه‌مند به فناوری هستند. با همکاری با ما، می‌توانید برند، محصول یا خدمات خود را در معرض دید این جامعه هدف قرار دهید. ما دو نوع همکاری ارائه می‌دهیم: <b>تبلیغات (درج بنر/پست)</b> و <b>اسپانسری (همکاری داده‌ای و مالی)</b>. لطفاً برای شروع، فرم زیر را تکمیل نمایید.</p>
+                </div>
 
-    <!-- فوتر -->
-    <footer>
-        <div class="footer-socials">
-            <a href="https://t.me/radarinternetiran" target="_blank"><i class="fa-brands fa-telegram"></i></a>
-            <a href="https://instagram.com/radar.internet.iran.official" target="_blank"><i class="fa-brands fa-instagram"></i></a>
-            <a href="https://t.me/radarinternetirangruop" target="_blank"><i class="fa-solid fa-users"></i></a>
+                <div id="form-alert" class="alert"></div>
+                
+                <form id="ads-form" onsubmit="submitAds(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>نام</label>
+                            <input type="text" id="fname" class="form-control" placeholder="مثال: علی" required>
+                        </div>
+                        <div class="form-group">
+                            <label>نام خانوادگی</label>
+                            <input type="text" id="lname" class="form-control" placeholder="مثال: رضایی" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>حوزه کاری / نام برند</label>
+                        <input type="text" id="business" class="form-control" placeholder="مثال: فروشگاه لوازم دیجیتال" required>
+                    </div>
+                    <div class="form-group">
+                        <label>شماره تماس</label>
+                        <input type="tel" id="phone" class="form-control" placeholder="مثال: 09123456789" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>نوع درخواست</label>
+                        <select id="reqType" class="form-control" required>
+                            <option value="تبلیغات (درج بنر/پست)">تبلیغات (درج بنر/پست)</option>
+                            <option value="اسپانسری (همکاری داده‌ای/مالی)">اسپانسری (همکاری داده‌ای/مالی)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>توضیحات بیشتر (اختیاری)</label>
+                        <textarea id="desc" class="form-control" placeholder="لطفاً در صورت نیاز، درباره کسب‌وکار و نوع همکاری مورد نظر خود توضیح دهید..."></textarea>
+                    </div>
+                    
+                    <button type="submit" id="submit-btn" class="btn-submit">
+                        <i class="fa-solid fa-paper-plane"></i> ارسال درخواست
+                    </button>
+                </form>
+            </div>
         </div>
-        <div class="footer-text">
-            <p>© <span id="year"></span> رادار اینترنت ایران. تمامی حقوق محفوظ است.</p>
-            <p style="margin-top: 10px; font-size: 0.8rem;">هرگونه کپی‌برداری از داده‌ها و طراحی این سامانه بدون ذکر منبع <span>ممنوع</span> است.</p>
+
+        <!-- تب 4: API -->
+        <div id="api" class="tab-content">
+            <div class="page-header">
+                <h1>API اختصاصی</h1>
+                <p>دسترسی توسعه‌دهندگان به داده‌های خام رادار.</p>
+            </div>
+            <div class="card" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.5), rgba(245, 158, 11, 0.05)); border-color: rgba(245, 158, 11, 0.3);">
+                <h3 style="color: var(--gold); margin-bottom: 15px;"><i class="fa-solid fa-handshake"></i> شرایط همکاری</h3>
+                <p style="color: var(--muted); font-size: 0.95rem; line-height: 1.8;">
+                    داده‌های تحلیل‌شده رادار (JSON) در اختیار استارتاپ‌ها و محققان قرار می‌گیرد. 
+                    <br><br>
+                    <b>شرط استفاده:</b> دریافت‌کنندگان موظفند در سرویس خود، عبارت <b>«رادار اینترنت ایران»</b> را به عنوان اسپانسر داده و منبع رسمی معرفی کنند.
+                </p>
+                <a href="https://t.me/Adddddddm" target="_blank" class="btn-tg" style="background: var(--gold); color: #000; margin-top: 20px; display: inline-flex; width: auto;">
+                    <i class="fa-solid fa-paper-plane"></i> درخواست کلید API
+                </a>
+            </div>
         </div>
-    </footer>
+
+    </main>
 
     <script>
-        document.getElementById('year').textContent = new Date().getFullYear();
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
-            });
-        });
+        // تغییر تب‌ها
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            element.classList.add('active');
+            if (tabId === 'ip-tool') { fetchClientIP(); }
+        }
+
+        // دریافت آی‌پی
+        async function fetchClientIP() {
+            const loading = document.getElementById('ip-loading');
+            const result = document.getElementById('ip-result');
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            try {
+                const response = await fetch('/api/myip');
+                const data = await response.json();
+                document.getElementById('user-ip').textContent = data.ip;
+                document.getElementById('user-country').textContent = data.country;
+                document.getElementById('user-city').textContent = data.city;
+                loading.style.display = 'none';
+                result.style.display = 'block';
+            } catch (error) {
+                loading.innerHTML = '<p style="color: #ef4444;">خطا در دریافت اطلاعات.</p>';
+            }
+        }
+
+        // ارسال فرم تبلیغات
+        async function submitAds(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            const alertBox = document.getElementById('form-alert');
+            
+            const fname = document.getElementById('fname').value.trim();
+            const lname = document.getElementById('lname').value.trim();
+            const business = document.getElementById('business').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const reqType = document.getElementById('reqType').value;
+            const desc = document.getElementById('desc').value.trim();
+
+            if(!fname || !lname || !business || !phone) return;
+
+            // تغییر وضعیت دکمه
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0;"></div> در حال ارسال...';
+            alertBox.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/ads_request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fname, lname, business, phone, reqType, desc })
+                });
+                
+                const data = await response.json();
+
+                if (data.ok) {
+                    alertBox.className = 'alert alert-success';
+                    alertBox.textContent = '✅ درخواست شما با موفقیت ثبت شد. تیم مدیریت به زودی با شما تماس خواهد گرفت.';
+                    alertBox.style.display = 'block';
+                    document.getElementById('ads-form').reset(); // خالی کردن فرم
+                } else {
+                    throw new Error(data.error || 'خطای ناشناخته');
+                }
+            } catch (error) {
+                alertBox.className = 'alert alert-error';
+                alertBox.textContent = '❌ خطا در ارسال درخواست. لطفاً دوباره تلاش کنید.';
+                alertBox.style.display = 'block';
+            } finally {
+                // برگرداندن دکمه به حالت اول
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> ارسال درخواست';
+            }
+        }
     </script>
 </body>
 </html>
