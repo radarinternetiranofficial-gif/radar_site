@@ -2,7 +2,7 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // ==================== 1. API for Client IP ====================
+    // ==================== 1. API for Client IP & Location ====================
     if (url.pathname === '/api/myip') {
       const clientIP = request.headers.get('CF-Connecting-IP') || "نامشخص";
       const country = request.cf?.country || "نامشخص";
@@ -80,11 +80,7 @@ export default {
         a { text-decoration: none; color: inherit; transition: 0.3s; }
 
         /* چراغ چشمک زن */
-        .live-dot {
-            display: inline-block; width: 10px; height: 10px; background-color: var(--primary);
-            border-radius: 50%; margin-left: 8px; box-shadow: 0 0 10px var(--primary);
-            animation: pulse 1.5s infinite;
-        }
+        .live-dot { display: inline-block; width: 10px; height: 10px; background-color: var(--primary); border-radius: 50%; margin-left: 8px; box-shadow: 0 0 10px var(--primary); animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
         /* سایدبار */
@@ -135,14 +131,24 @@ export default {
         .alert-success { background: rgba(16, 185, 129, 0.1); color: var(--primary); border: 1px solid var(--primary); }
         .alert-error { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; }
 
-        /* ابزار آی‌پی */
-        .ip-container { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 20px; }
-        .ip-icon { font-size: 3rem; color: var(--primary); margin-bottom: 20px; }
-        .ip-value { font-size: 2.5rem; font-weight: 900; color: var(--text); letter-spacing: 2px; margin: 15px 0; direction: ltr; }
-        .ip-details { display: flex; gap: 20px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
-        .ip-badge { background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 8px 20px; border-radius: 50px; font-size: 0.9rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
-        .btn-copy { margin-top: 25px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text); padding: 10px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
-        .btn-copy:hover { background: rgba(16, 185, 129, 0.1); color: var(--primary); border-color: var(--primary); }
+        /* ابزار آی‌پی (طراحی جدید) */
+        .ip-container { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px 15px; }
+        .ip-icon { font-size: 3rem; color: var(--primary); margin-bottom: 15px; }
+        
+        .ip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 600px; margin: 20px 0; }
+        
+        .ip-card {
+            background: rgba(0,0,0,0.3); border: 1px dashed var(--border); border-radius: 12px;
+            padding: 15px; cursor: pointer; transition: 0.3s; text-align: center; position: relative;
+        }
+        .ip-card:hover { background: rgba(255,255,255,0.05); border-color: var(--primary); }
+        .ip-card.copied { border-color: var(--primary); background: rgba(16, 185, 129, 0.1); }
+        
+        .ip-title { font-size: 0.85rem; color: var(--muted); margin-bottom: 5px; font-weight: bold; letter-spacing: 1px; }
+        .ip-value { font-size: 1.1rem; font-weight: 800; color: var(--text); word-break: break-all; direction: ltr; }
+        
+        .ip-details { display: flex; gap: 15px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }
+        .ip-badge { background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 8px 15px; border-radius: 50px; font-size: 0.85rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
         
         .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -163,7 +169,7 @@ export default {
             .nav-item.active { border-right: none; border-bottom: 3px solid var(--primary); border-radius: 8px 8px 0 0; }
             .nav-item i { font-size: 1.3rem; }
             .main-content { margin-right: 0; padding: 20px; height: calc(100vh - 70px); padding-bottom: 90px; }
-            .grid-2, .form-row { grid-template-columns: 1fr; }
+            .grid-2, .form-row, .ip-grid { grid-template-columns: 1fr; }
             .page-header h1 { font-size: 1.6rem; }
             .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
             .main-footer { flex-direction: column; text-align: center; }
@@ -226,20 +232,34 @@ export default {
             </div>
             <div class="card ip-container">
                 <div class="ip-icon"><i class="fa-solid fa-globe"></i></div>
-                <h3 style="color: var(--muted);">آی‌پی فعلی شما</h3>
+                <h3 style="color: var(--muted);">آی‌پی‌های فعلی شما</h3>
+                <p style="color: var(--muted); font-size: 0.85rem; margin-top: 5px;">برای کپی، روی هر کدام کلیک کنید.</p>
                 
                 <div id="ip-loading">
                     <div class="spinner"></div>
                     <p style="color: var(--muted); font-size: 0.9rem;">در حال دریافت اطلاعات...</p>
                 </div>
                 
-                <div id="ip-result" style="display: none;">
-                    <div class="ip-value" id="user-ip">---</div>
+                <div id="ip-result" style="display: none; width: 100%;">
+                    
+                    <div class="ip-grid">
+                        <!-- کارت IPv4 -->
+                        <div class="ip-card" id="card-ipv4" onclick="copyText('ipv4-val', 'card-ipv4')">
+                            <div class="ip-title">IPv4</div>
+                            <div class="ip-value" id="ipv4-val">دریافت...</div>
+                        </div>
+                        
+                        <!-- کارت IPv6 -->
+                        <div class="ip-card" id="card-ipv6" onclick="copyText('ipv6-val', 'card-ipv6')">
+                            <div class="ip-title">IPv6</div>
+                            <div class="ip-value" id="ipv6-val">دریافت...</div>
+                        </div>
+                    </div>
+
                     <div class="ip-details">
                         <div class="ip-badge"><i class="fa-solid fa-flag"></i> کشور: <span id="user-country" style="color: var(--text); font-weight: bold; margin-right: 5px;">---</span></div>
                         <div class="ip-badge"><i class="fa-solid fa-location-dot"></i> شهر: <span id="user-city" style="color: var(--text); font-weight: bold; margin-right: 5px;">---</span></div>
                     </div>
-                    <button class="btn-copy" id="copy-btn" onclick="copyIP()"><i class="fa-regular fa-copy"></i> کپی آی‌پی</button>
                 </div>
             </div>
         </div>
@@ -347,21 +367,41 @@ export default {
             document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             element.classList.add('active');
-            if (tabId === 'ip-tool') { fetchClientIP(); }
+            if (tabId === 'ip-tool') { fetchClientIPs(); }
         }
 
-        // دریافت آی‌پی
-        async function fetchClientIP() {
+        // دریافت همزمان IPv4، IPv6 و موقعیت مکانی
+        async function fetchClientIPs() {
             const loading = document.getElementById('ip-loading');
             const result = document.getElementById('ip-result');
             loading.style.display = 'block';
             result.style.display = 'none';
+
+            // دریافت IPv4 از api.ipify.org
+            const fetchIpv4 = fetch('https://api.ipify.org?format=json')
+                .then(r => r.json()).then(d => d.ip)
+                .catch(() => 'نامشخص');
+            
+            // دریافت IPv6 از api6.ipify.org
+            const fetchIpv6 = fetch('https://api6.ipify.org?format=json')
+                .then(r => r.json()).then(d => d.ip)
+                .catch(() => 'نامشخص');
+            
+            // دریافت موقعیت مکانی از سرور خودمان
+            const fetchGeo = fetch('/api/myip')
+                .then(r => r.json())
+                .catch(() => ({}));
+
             try {
-                const response = await fetch('/api/myip');
-                const data = await response.json();
-                document.getElementById('user-ip').textContent = data.ip;
-                document.getElementById('user-country').textContent = data.country;
-                document.getElementById('user-city').textContent = data.city;
+                // اجرای همزمان هر سه درخواست
+                const [ipv4, ipv6, geo] = await Promise.all([fetchIpv4, fetchIpv6, fetchGeo]);
+
+                document.getElementById('ipv4-val').textContent = ipv4;
+                document.getElementById('ipv6-val').textContent = ipv6;
+                
+                document.getElementById('user-country').textContent = geo.country || 'نامشخص';
+                document.getElementById('user-city').textContent = geo.city || 'نامشخص';
+
                 loading.style.display = 'none';
                 result.style.display = 'block';
             } catch (error) {
@@ -369,21 +409,22 @@ export default {
             }
         }
 
-        // کپی آی‌پی
-        function copyIP() {
-            const ipText = document.getElementById('user-ip').innerText;
-            if (ipText && ipText !== '---') {
-                navigator.clipboard.writeText(ipText).then(() => {
-                    const btn = document.getElementById('copy-btn');
-                    const originalText = btn.innerHTML;
-                    btn.innerHTML = '<i class="fa-solid fa-check"></i> کپی شد';
-                    btn.style.color = 'var(--primary)';
-                    btn.style.borderColor = 'var(--primary)';
+        // کپی کردن متن (با گرفتن آیدی متن و آیدی کارت)
+        function copyText(textId, cardId) {
+            const textToCopy = document.getElementById(textId).innerText;
+            const card = document.getElementById(cardId);
+            
+            if (textToCopy && textToCopy !== 'دریافت...' && textToCopy !== 'نامشخص') {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    // افکت بصری
+                    card.classList.add('copied');
+                    const originalText = document.getElementById(textId).innerText;
+                    document.getElementById(textId).innerText = 'کپی شد ✅';
+                    
                     setTimeout(() => {
-                        btn.innerHTML = originalText;
-                        btn.style.color = '';
-                        btn.style.borderColor = '';
-                    }, 2000);
+                        card.classList.remove('copied');
+                        document.getElementById(textId).innerText = originalText;
+                    }, 1500);
                 });
             }
         }
