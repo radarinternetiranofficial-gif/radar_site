@@ -18,7 +18,6 @@ export default {
         const body = await request.json();
         const { fname, lname, business, phone, reqType, desc } = body;
         
-        // متن پیام ارسالی به ادمین
         const msg = `📢 <b>درخواست جدید (${reqType}) از سایت</b>\n\n👤 نام و نام خانوادگی: <b>${fname} ${lname}</b>\n💼 حوزه کاری/برند: ${business}\n📞 شماره تماس: <code>${phone}</code>\n\n📝 <b>توضیحات:</b>\n<i>${desc || "توضیحی ارائه نشده است."}</i>\n\n⏰ زمان ثبت: ${new Date().toLocaleString('fa-IR')}`;
         
         const ADMIN_IDS = ["8344700031", "7652496428"];
@@ -53,9 +52,7 @@ export default {
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <!-- ✅ تگ تایید گوگل -->
     <meta name="google-site-verification" content="Oskdq7_86up9xROsMJqIpKZ_cTczPZ5ZCNroOT-bnCc" />
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
@@ -82,11 +79,18 @@ export default {
         body { background-color: var(--bg); color: var(--text); line-height: 1.8; overflow-x: hidden; display: flex; height: 100vh; background-image: radial-gradient(circle at 50% -20%, rgba(16, 185, 129, 0.1), transparent 40%); background-attachment: fixed; }
         a { text-decoration: none; color: inherit; transition: 0.3s; }
 
+        /* چراغ چشمک زن */
+        .live-dot {
+            display: inline-block; width: 10px; height: 10px; background-color: var(--primary);
+            border-radius: 50%; margin-left: 8px; box-shadow: 0 0 10px var(--primary);
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+
         /* سایدبار */
         .sidebar { width: var(--sidebar-width); background: rgba(3, 7, 18, 0.95); backdrop-filter: blur(20px); border-left: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; position: fixed; top: 0; right: 0; height: 100vh; z-index: 1000; transition: 0.3s; }
         .logo { font-size: 1.3rem; font-weight: 900; display: flex; align-items: center; gap: 10px; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
-        .logo i { color: var(--primary); font-size: 1.6rem; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .logo i { color: var(--primary); font-size: 1.6rem; }
         
         .nav-menu { display: flex; flex-direction: column; gap: 8px; flex: 1; }
         .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 12px; color: var(--muted); font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 0.95rem; }
@@ -99,23 +103,20 @@ export default {
         .btn-tg:hover { background: #2563eb; transform: translateY(-2px); }
 
         /* محتوا */
-        .main-content { flex: 1; margin-right: var(--sidebar-width); padding: 40px; overflow-y: auto; height: 100vh; }
-        .tab-content { display: none; animation: fadeIn 0.4s ease; }
+        .main-content { flex: 1; margin-right: var(--sidebar-width); padding: 40px; overflow-y: auto; height: 100vh; display: flex; flex-direction: column; }
+        .tab-content { display: none; animation: fadeIn 0.4s ease; flex: 1; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .page-header { margin-bottom: 30px; }
+        .page-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
         .page-header h1 { font-size: 2rem; font-weight: 900; margin-bottom: 10px; }
-        .page-header p { color: var(--muted); font-size: 1rem; }
+        .page-header p { color: var(--muted); font-size: 1rem; display: flex; align-items: center; }
 
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .card { background: var(--surface); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 16px; padding: 25px; transition: 0.3s; }
         .card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-3px); }
 
         /* فرم تبلیغات */
-        .info-box {
-            background: rgba(245, 158, 11, 0.05); border-right: 4px solid var(--gold);
-            padding: 20px; border-radius: 12px; margin-bottom: 30px; text-align: justify;
-        }
+        .info-box { background: rgba(245, 158, 11, 0.05); border-right: 4px solid var(--gold); padding: 20px; border-radius: 12px; margin-bottom: 30px; text-align: justify; }
         .info-box h3 { color: var(--gold); margin-bottom: 10px; font-size: 1.2rem; }
         .info-box p { color: var(--muted); font-size: 0.95rem; line-height: 1.9; }
 
@@ -138,10 +139,19 @@ export default {
         .ip-container { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 20px; }
         .ip-icon { font-size: 3rem; color: var(--primary); margin-bottom: 20px; }
         .ip-value { font-size: 2.5rem; font-weight: 900; color: var(--text); letter-spacing: 2px; margin: 15px 0; direction: ltr; }
-        .ip-details { display: flex; gap: 20px; justify-content: center; margin-top: 20px; }
+        .ip-details { display: flex; gap: 20px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
         .ip-badge { background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 8px 20px; border-radius: 50px; font-size: 0.9rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+        .btn-copy { margin-top: 25px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text); padding: 10px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
+        .btn-copy:hover { background: rgba(16, 185, 129, 0.1); color: var(--primary); border-color: var(--primary); }
+        
         .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* فوتر */
+        .main-footer { border-top: 1px solid var(--border); padding-top: 20px; margin-top: auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; color: var(--muted); font-size: 0.85rem; }
+        .footer-socials { display: flex; gap: 10px; }
+        .footer-socials a { width: 35px; height: 35px; border-radius: 8px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .footer-socials a:hover { background: var(--primary); color: #000; }
 
         /* موبایل */
         @media (max-width: 900px) {
@@ -155,6 +165,8 @@ export default {
             .main-content { margin-right: 0; padding: 20px; height: calc(100vh - 70px); padding-bottom: 90px; }
             .grid-2, .form-row { grid-template-columns: 1fr; }
             .page-header h1 { font-size: 1.6rem; }
+            .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .main-footer { flex-direction: column; text-align: center; }
         }
     </style>
 </head>
@@ -180,12 +192,15 @@ export default {
         <!-- تب 1: داشبورد -->
         <div id="dashboard" class="tab-content active">
             <div class="page-header">
-                <h1>داشبورد وضعیت شبکه</h1>
-                <p>آخرین بروزرسانی: ${today} • سیستم آنلاین است</p>
+                <div>
+                    <h1>داشبورد وضعیت شبکه</h1>
+                    <p><span class="live-dot"></span> سیستم پایش زنده فعال است • بروزرسانی: ${today}</p>
+                </div>
             </div>
+            
             <div class="grid-2" style="margin-bottom: 20px;">
                 <div class="card" style="text-align: center;">
-                    <h3 style="color: var(--muted); font-size: 0.9rem; margin-bottom: 10px;"><i class="fa-solid fa-wifi"></i> وضعیت کلی</h3>
+                    <h3 style="color: var(--muted); font-size: 0.9rem; margin-bottom: 10px;"><i class="fa-solid fa-wifi"></i> وضعیت کلی شبکه</h3>
                     <div style="font-size: 1.8rem; font-weight: 900; color: var(--primary);">پایدار</div>
                 </div>
                 <div class="card" style="text-align: center;">
@@ -193,6 +208,7 @@ export default {
                     <div style="font-size: 1.8rem; font-weight: 900; color: var(--gold);">متوسط</div>
                 </div>
             </div>
+            
             <div class="card" style="text-align: center; padding: 40px 20px;">
                 <h2 style="font-size: 1.5rem; margin-bottom: 15px;">گزارش کامل در تلگرام</h2>
                 <p style="color: var(--muted); margin-bottom: 25px;">برای مشاهده نمودارهای زنده، نقشه حرارتی و تست سرعت، وارد ربات شوید.</p>
@@ -203,22 +219,27 @@ export default {
         <!-- تب 2: ابزار آی‌پی -->
         <div id="ip-tool" class="tab-content">
             <div class="page-header">
-                <h1>ابزار تشخیص آی‌پی</h1>
-                <p>آی‌پی و موقعیت جغرافیایی شما بر اساس اتصال به شبکه.</p>
+                <div>
+                    <h1>ابزار تشخیص آی‌پی</h1>
+                    <p>آی‌پی و موقعیت جغرافیایی شما بر اساس اتصال به شبکه.</p>
+                </div>
             </div>
             <div class="card ip-container">
                 <div class="ip-icon"><i class="fa-solid fa-globe"></i></div>
                 <h3 style="color: var(--muted);">آی‌پی فعلی شما</h3>
+                
                 <div id="ip-loading">
                     <div class="spinner"></div>
                     <p style="color: var(--muted); font-size: 0.9rem;">در حال دریافت اطلاعات...</p>
                 </div>
+                
                 <div id="ip-result" style="display: none;">
                     <div class="ip-value" id="user-ip">---</div>
                     <div class="ip-details">
                         <div class="ip-badge"><i class="fa-solid fa-flag"></i> کشور: <span id="user-country" style="color: var(--text); font-weight: bold; margin-right: 5px;">---</span></div>
                         <div class="ip-badge"><i class="fa-solid fa-location-dot"></i> شهر: <span id="user-city" style="color: var(--text); font-weight: bold; margin-right: 5px;">---</span></div>
                     </div>
+                    <button class="btn-copy" id="copy-btn" onclick="copyIP()"><i class="fa-regular fa-copy"></i> کپی آی‌پی</button>
                 </div>
             </div>
         </div>
@@ -226,16 +247,17 @@ export default {
         <!-- تب 3: درخواست اسپانسری -->
         <div id="ads" class="tab-content">
             <div class="page-header">
-                <h1>فرصت‌های همکاری و اسپانسری</h1>
-                <p>برند خود را به هزاران کاربر فعال و متخصص در حوزه فناوری معرفی کنید.</p>
+                <div>
+                    <h1>فرصت‌های همکاری و اسپانسری</h1>
+                    <p>برند خود را به هزاران کاربر فعال و متخصص در حوزه فناوری معرفی کنید.</p>
+                </div>
             </div>
             
             <div class="card" style="max-width: 650px; margin: 0 auto;">
                 
-                <!-- متن رسمی معرفی -->
                 <div class="info-box">
                     <h3><i class="fa-solid fa-handshake"></i> چرا با رادار اینترنت ایران همکاری کنیم؟</h3>
-                    <p>پلتفرم «رادار اینترنت ایران» با ارائه داده‌های دقیق و لحظه‌ای از وضعیت شبکه، مخاطبان خاص و ارزشمندی را جذب کرده است. این کاربران شامل متخصصان IT، توسعه‌دهندگان، فعالان حوزه دیجیتال و کاربران عمومی علاقه‌مند به فناوری هستند. با همکاری با ما، می‌توانید برند، محصول یا خدمات خود را در معرض دید این جامعه هدف قرار دهید. ما دو نوع همکاری ارائه می‌دهیم: <b>تبلیغات (درج بنر/پست)</b> و <b>اسپانسری (همکاری داده‌ای و مالی)</b>. لطفاً برای شروع، فرم زیر را تکمیل نمایید.</p>
+                    <p>پلتفرم «رادار اینترنت ایران» با ارائه داده‌های دقیق و لحظه‌ای از وضعیت شبکه، مخاطبان خاص و ارزشمندی را جذب کرده است. با همکاری با ما، می‌توانید برند خود را در معرض دید این جامعه هدف قرار دهید. ما دو نوع همکاری ارائه می‌دهیم: <b>تبلیغات (درج بنر/پست)</b> و <b>اسپانسری (همکاری داده‌ای و مالی)</b>.</p>
                 </div>
 
                 <div id="form-alert" class="alert"></div>
@@ -244,11 +266,11 @@ export default {
                     <div class="form-row">
                         <div class="form-group">
                             <label>نام</label>
-                            <input type="text" id="fname" class="form-control" placeholder="مثال: علی" required>
+                            <input type="text" id="fname" class="form-control" required>
                         </div>
                         <div class="form-group">
                             <label>نام خانوادگی</label>
-                            <input type="text" id="lname" class="form-control" placeholder="مثال: رضایی" required>
+                            <input type="text" id="lname" class="form-control" required>
                         </div>
                     </div>
                     <div class="form-group">
@@ -257,7 +279,7 @@ export default {
                     </div>
                     <div class="form-group">
                         <label>شماره تماس</label>
-                        <input type="tel" id="phone" class="form-control" placeholder="مثال: 09123456789" required>
+                        <input type="tel" id="phone" class="form-control" required>
                     </div>
                     
                     <div class="form-group">
@@ -283,8 +305,10 @@ export default {
         <!-- تب 4: API -->
         <div id="api" class="tab-content">
             <div class="page-header">
-                <h1>API اختصاصی</h1>
-                <p>دسترسی توسعه‌دهندگان به داده‌های خام رادار.</p>
+                <div>
+                    <h1>API اختصاصی</h1>
+                    <p>دسترسی توسعه‌دهندگان به داده‌های خام رادار.</p>
+                </div>
             </div>
             <div class="card" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.5), rgba(245, 158, 11, 0.05)); border-color: rgba(245, 158, 11, 0.3);">
                 <h3 style="color: var(--gold); margin-bottom: 15px;"><i class="fa-solid fa-handshake"></i> شرایط همکاری</h3>
@@ -299,9 +323,24 @@ export default {
             </div>
         </div>
 
+        <!-- فوتر -->
+        <footer class="main-footer">
+            <div class="footer-socials">
+                <a href="https://t.me/radarinternetiran" target="_blank" title="کانال تلگرام"><i class="fa-brands fa-telegram"></i></a>
+                <a href="https://instagram.com/radar.internet.iran.official" target="_blank" title="اینستاگرام"><i class="fa-brands fa-instagram"></i></a>
+                <a href="https://t.me/radarinternetirangruop" target="_blank" title="گروه پشتیبانی"><i class="fa-solid fa-users"></i></a>
+            </div>
+            <div>
+                © <span id="year"></span> رادار اینترنت ایران. تمامی حقوق محفوظ است.
+            </div>
+        </footer>
+
     </main>
 
     <script>
+        // تنظیم سال فوتر
+        document.getElementById('year').textContent = new Date().getFullYear();
+
         // تغییر تب‌ها
         function switchTab(tabId, element) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -330,6 +369,25 @@ export default {
             }
         }
 
+        // کپی آی‌پی
+        function copyIP() {
+            const ipText = document.getElementById('user-ip').innerText;
+            if (ipText && ipText !== '---') {
+                navigator.clipboard.writeText(ipText).then(() => {
+                    const btn = document.getElementById('copy-btn');
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> کپی شد';
+                    btn.style.color = 'var(--primary)';
+                    btn.style.borderColor = 'var(--primary)';
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.style.color = '';
+                        btn.style.borderColor = '';
+                    }, 2000);
+                });
+            }
+        }
+
         // ارسال فرم تبلیغات
         async function submitAds(e) {
             e.preventDefault();
@@ -345,7 +403,6 @@ export default {
 
             if(!fname || !lname || !business || !phone) return;
 
-            // تغییر وضعیت دکمه
             btn.disabled = true;
             btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0;"></div> در حال ارسال...';
             alertBox.style.display = 'none';
@@ -363,7 +420,7 @@ export default {
                     alertBox.className = 'alert alert-success';
                     alertBox.textContent = '✅ درخواست شما با موفقیت ثبت شد. تیم مدیریت به زودی با شما تماس خواهد گرفت.';
                     alertBox.style.display = 'block';
-                    document.getElementById('ads-form').reset(); // خالی کردن فرم
+                    document.getElementById('ads-form').reset();
                 } else {
                     throw new Error(data.error || 'خطای ناشناخته');
                 }
@@ -372,7 +429,6 @@ export default {
                 alertBox.textContent = '❌ خطا در ارسال درخواست. لطفاً دوباره تلاش کنید.';
                 alertBox.style.display = 'block';
             } finally {
-                // برگرداندن دکمه به حالت اول
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> ارسال درخواست';
             }
