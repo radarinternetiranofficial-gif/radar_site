@@ -9,7 +9,6 @@ export default {
       const city = request.cf?.city || "نامشخص";
       const asn = request.cf?.asn || 0;
       
-      // جدول تشخیص اپراتورهای ایران بر اساس ASN
       const ISP_MAP = {
         "44244": "ایرانسل", "197207": "همراه اول", "58224": "مخابرات (TCI)",
         "31549": "شاتل", "42337": "پارس آنلاین", "43754": "آسیاتک",
@@ -30,7 +29,6 @@ export default {
 
     const today = new Date().toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' });
     
-    // ✅ آدرس API ربات شما (تغییر داده شد و آماده است)
     const BOT_API_URL = "https://radar-bot.royal-trust-ir-official.workers.dev/api/report_test";
 
     const htmlContent = `
@@ -43,7 +41,6 @@ export default {
     <title>رادار اینترنت ایران | تست هوشمند آزادی اینترنت</title>
     <meta name="description" content="با ورود به سایت، وضعیت دسترسی خود به سرویس‌های داخلی و خارجی را بسنجید.">
     
-    <!-- 🚀 تگ‌های Open Graph -->
     <meta property="og:title" content="رادار اینترنت ایران | تست آزادی اینترنت">
     <meta property="og:description" content="با ورود به سایت، وضعیت دسترسی اینترنت خود را بسنجید.">
     <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/2933/2933942.png">
@@ -58,7 +55,6 @@ export default {
         body { background-color: var(--bg); color: var(--text); line-height: 1.8; overflow-x: hidden; display: flex; height: 100vh; background-image: radial-gradient(circle at 50% -20%, rgba(16, 185, 129, 0.1), transparent 40%); background-attachment: fixed; }
         a { text-decoration: none; color: inherit; transition: 0.3s; }
         
-        /* سایدبار */
         .sidebar { width: var(--sidebar-width); background: rgba(3, 7, 18, 0.95); backdrop-filter: blur(20px); border-left: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; position: fixed; top: 0; right: 0; height: 100vh; z-index: 1000; }
         .logo { font-size: 1.3rem; font-weight: 900; display: flex; align-items: center; gap: 10px; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
         .logo i { color: var(--primary); font-size: 1.6rem; }
@@ -71,7 +67,6 @@ export default {
         .btn-tg { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: var(--blue); color: #fff; border-radius: 10px; font-weight: bold; font-size: 0.9rem; border: none; cursor: pointer; }
         .btn-tg:hover { background: #2563eb; }
         
-        /* محتوا */
         .main-content { flex: 1; margin-right: var(--sidebar-width); padding: 40px; overflow-y: auto; height: 100vh; display: flex; flex-direction: column; }
         .tab-content { display: none; animation: fadeIn 0.4s ease; flex: 1; }
         .tab-content.active { display: block; }
@@ -81,12 +76,11 @@ export default {
         
         .card { background: var(--surface); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 16px; padding: 25px; margin-bottom: 20px; }
         
-        /* استایل تست هوشمند */
         .test-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
         .isp-info { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: bold; color: var(--blue); }
         .freedom-score { font-size: 2rem; font-weight: 900; color: var(--primary); }
         
-        .sites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-top: 15px; }
+        .sites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-top: 15px; }
         .site-card { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 12px; padding: 15px 10px; text-align: center; transition: 0.3s; position: relative; overflow: hidden; }
         .site-card.testing { border-color: var(--gold); }
         .site-card.success { border-color: var(--primary); background: rgba(16, 185, 129, 0.1); }
@@ -98,7 +92,6 @@ export default {
         .site-name { font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; }
         .site-ping { font-size: 0.75rem; color: var(--muted); direction: ltr; }
         
-        /* اسپینر لودینگ */
         .spinner { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--gold); border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; margin: 5px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
@@ -137,16 +130,14 @@ export default {
     </aside>
 
     <main class="main-content">
-        <!-- تب تست هوشمند -->
         <div id="dashboard" class="tab-content active">
             <div class="page-header">
                 <div>
                     <h1>تست هوشمند آزادی اینترنت</h1>
-                    <p>سایت در حال بررسی وضعیت دسترسی شما به ۱۶ سرویس مختلف است...</p>
+                    <p>سایت در حال بررسی وضعیت دسترسی شما به ۲۵ سرویس مختلف است...</p>
                 </div>
             </div>
 
-            <!-- کارت خلاصه وضعیت -->
             <div class="card" id="summary-card">
                 <div class="test-header">
                     <div class="isp-info">
@@ -162,7 +153,6 @@ export default {
                 </p>
             </div>
 
-            <!-- شبکه تست -->
             <div class="card">
                 <h3 style="margin-bottom: 15px; font-size: 1.1rem; color: var(--blue);"><i class="fa-solid fa-globe"></i> سرویس‌های خارجی (ملاک آزادی)</h3>
                 <div class="sites-grid" id="foreign-sites"></div>
@@ -172,7 +162,6 @@ export default {
             </div>
         </div>
 
-        <!-- تب آی پی -->
         <div id="ip-tool" class="tab-content">
             <div class="page-header"><div><h1>ابزار تشخیص آی‌پی</h1><p>آی‌پی و موقعیت شما.</p></div></div>
             <div class="card ip-container">
@@ -184,7 +173,6 @@ export default {
             </div>
         </div>
 
-        <!-- تب اسپانسری -->
         <div id="ads" class="tab-content">
             <div class="page-header"><div><h1>درخواست اسپانسری</h1><p>همکاری با رادار.</p></div></div>
             <div class="card" style="text-align:center; padding: 40px;">
@@ -200,7 +188,7 @@ export default {
 
     <script>
         document.getElementById('year').textContent = new Date().getFullYear();
-        const BOT_API_URL = "${BOT_API_URL}"; // آدرس ربات به صورت خودکار تزریق می‌شود
+        const BOT_API_URL = "${BOT_API_URL}";
 
         function switchTab(tabId, element) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -210,7 +198,6 @@ export default {
             if(tabId === 'ip-tool') fetchIPs();
         }
 
-        // تابع تست یک سایت با روش لود عکس
         function testSite(domain) {
             return new Promise((resolve) => {
                 const start = performance.now();
@@ -220,32 +207,42 @@ export default {
                 img.onload = () => { clearTimeout(timeout); resolve({ success: true, time: Math.round(performance.now() - start) }); };
                 img.onerror = () => { clearTimeout(timeout); resolve({ success: false, time: 0 }); };
                 
+                // استفاده از فاوآیکون
                 img.src = 'https://' + domain + '/favicon.ico?t=' + Date.now();
             });
         }
 
-        // لیست سایت‌های خارجی
+        // 👇 لیست جدید و کامل‌تر سایت‌های خارجی (۱۵ سایت) 👇
         const foreignSites = [
             { name: 'Instagram', domain: 'instagram.com', icon: 'fa-brands fa-instagram' },
             { name: 'Telegram', domain: 'telegram.org', icon: 'fa-brands fa-telegram' },
             { name: 'Twitter / X', domain: 'x.com', icon: 'fa-brands fa-x-twitter' },
             { name: 'Facebook', domain: 'facebook.com', icon: 'fa-brands fa-facebook' },
+            { name: 'YouTube', domain: 'youtube.com', icon: 'fa-brands fa-youtube' },
+            { name: 'WhatsApp', domain: 'whatsapp.com', icon: 'fa-brands fa-whatsapp' },
             { name: 'Google', domain: 'google.com', icon: 'fa-brands fa-google' },
             { name: 'Google Play', domain: 'play.google.com', icon: 'fa-brands fa-google-play' },
-            { name: 'YouTube', domain: 'youtube.com', icon: 'fa-brands fa-youtube' },
             { name: 'GitHub', domain: 'github.com', icon: 'fa-brands fa-github' },
-            { name: 'WhatsApp', domain: 'whatsapp.com', icon: 'fa-brands fa-whatsapp' },
-            { name: 'Wikipedia', domain: 'wikipedia.org', icon: 'fa-brands fa-wikipedia-w' }
+            { name: 'Wikipedia', domain: 'wikipedia.org', icon: 'fa-brands fa-wikipedia-w' },
+            { name: 'Discord', domain: 'discord.com', icon: 'fa-brands fa-discord' },
+            { name: 'ChatGPT', domain: 'chatgpt.com', icon: 'fa-solid fa-robot' },
+            { name: 'Reddit', domain: 'reddit.com', icon: 'fa-brands fa-reddit' },
+            { name: 'Netflix', domain: 'netflix.com', icon: 'fa-solid fa-film' },
+            { name: 'Spotify', domain: 'spotify.com', icon: 'fa-brands fa-spotify' }
         ];
 
-        // لیست سایت‌های داخلی
+        // 👇 لیست جدید و کامل‌تر سایت‌های داخلی (۱۰ سایت) 👇
         const domesticSites = [
             { name: 'دیجی‌کالا', domain: 'digikala.com', icon: 'fa-solid fa-cart-shopping' },
+            { name: 'دیوار', domain: 'divar.ir', icon: 'fa-solid fa-building' },
+            { name: 'کافه‌بازار', domain: 'cafebazaar.ir', icon: 'fa-brands fa-google-play' },
             { name: 'شاپرک', domain: 'shaparak.ir', icon: 'fa-solid fa-credit-card' },
             { name: 'آپارات', domain: 'aparat.com', icon: 'fa-solid fa-video' },
-            { name: 'اسنپ', domain: 'snapp.ir', icon: 'fa-solid fa-car' },
+            { name: 'علی‌بابا', domain: 'alibaba.ir', icon: 'fa-solid fa-plane' },
+            { name: 'اسنپ', domain: 'snapp.ir', icon: 'fa-solid fa-car' }, // دامنه اصلی
             { name: 'بله', domain: 'bale.ai', icon: 'fa-solid fa-comment-dots' },
-            { name: 'ایتا', domain: 'eitaa.com', icon: 'fa-solid fa-comments' }
+            { name: 'ایتا', domain: 'eitaa.com', icon: 'fa-solid fa-comments' },
+            { name: 'شاد', domain: 'shad.ir', icon: 'fa-solid fa-school' }
         ];
 
         async function runTests() {
@@ -292,7 +289,6 @@ export default {
                 const geo = await geoRes.json();
                 document.getElementById('isp-name').textContent = geo.isp;
 
-                // ارسال به ورکر ربات
                 await fetch(BOT_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
