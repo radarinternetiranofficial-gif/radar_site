@@ -27,7 +27,6 @@ export default {
       });
     }
 
-    const today = new Date().toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' });
     const BOT_API_URL = "https://radar-bot.royal-trust-ir-official.workers.dev/api/report_test";
 
     const htmlContent = `
@@ -47,6 +46,9 @@ export default {
 
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 📊 اضافه کردن کتابخانه Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root { --bg: #030712; --surface: rgba(17, 24, 39, 0.7); --text: #f9fafb; --muted: #9ca3af; --primary: #10b981; --blue: #3b82f6; --gold: #f59e0b; --red: #ef4444; --border: rgba(255, 255, 255, 0.08); --sidebar-width: 260px; }
@@ -73,19 +75,10 @@ export default {
         .page-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
         .page-header h1 { font-size: 2rem; font-weight: 900; margin-bottom: 10px; }
         
-        /* 👇 استایل باکس هشدار رسمی 👇 */
         .notice-box {
-            background: rgba(245, 158, 11, 0.08);
-            border-right: 4px solid var(--gold);
-            padding: 15px 20px;
-            border-radius: 12px;
-            margin-bottom: 25px;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            font-size: 0.95rem;
-            color: var(--text);
-            line-height: 1.7;
+            background: rgba(245, 158, 11, 0.08); border-right: 4px solid var(--gold);
+            padding: 15px 20px; border-radius: 12px; margin-bottom: 25px;
+            display: flex; align-items: flex-start; gap: 12px; font-size: 0.95rem; color: var(--text); line-height: 1.7;
         }
         .notice-box i { color: var(--gold); font-size: 1.3rem; margin-top: 3px; }
         .notice-box b { color: var(--gold); }
@@ -95,6 +88,15 @@ export default {
         .test-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
         .isp-info { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: bold; color: var(--blue); }
         .freedom-score { font-size: 2rem; font-weight: 900; color: var(--primary); }
+        
+        /* 📈 استایل کانتینر نمودار خطی */
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            position: relative;
+        }
         
         .sites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-top: 15px; }
         .site-card { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 12px; padding: 15px 10px; text-align: center; transition: 0.3s; position: relative; overflow: hidden; }
@@ -119,8 +121,6 @@ export default {
         .info-box { background: rgba(245, 158, 11, 0.05); border-right: none; border-left: 4px solid var(--gold); padding: 25px; border-radius: 12px; margin-bottom: 30px; text-align: right; }
         .info-box h3 { color: var(--gold); margin-bottom: 10px; font-size: 1.3rem; }
         .info-box p { color: var(--muted); font-size: 0.95rem; line-height: 1.9; margin-bottom: 15px; }
-        .info-box ul { color: var(--muted); font-size: 0.95rem; padding-right: 20px; margin-bottom: 20px; }
-        .info-box li { margin-bottom: 8px; }
         
         .main-footer { border-top: 1px solid var(--border); padding-top: 20px; margin-top: auto; text-align: center; color: var(--muted); font-size: 0.85rem; }
         
@@ -156,15 +156,14 @@ export default {
             <div class="page-header">
                 <div>
                     <h1>تست هوشمند آزادی اینترنت</h1>
-                    <p>سایت در حال بررسی وضعیت دسترسی شما به ۲۵ سرویس مختلف است...</p>
+                    <p>روند دسترسی شما در طول زمان به صورت خودکار به‌روزرسانی می‌شود.</p>
                 </div>
             </div>
 
-            <!-- 👇 باکس هشدار رسمی (اینجا اضافه شد) 👇 -->
             <div class="notice-box">
                 <i class="fa-solid fa-circle-exclamation"></i>
                 <div>
-                    <b>توجه مهم:</b> جهت دریافت داده‌های دقیق و منطبق با واقعیتِ شبکه اپراتور خود، لطفاً پیش از انجام تست، از <b>غیرفعال بودن سرویس‌های تغییردهندهٔ DNS</b> (مانند شکن، ۴۰۳، الکترو) و همچنین نرم‌افزارهای عبور از فیلترشکن، اطمینان حاصل فرمایید. در غیر این صورت، شاخص آزادی محاسبه‌شده، وضعیت واقعی اینترنت شما را نشان نخواهد داد.
+                    <b>توجه مهم:</b> جهت دریافت داده‌های دقیق، از <b>غیرفعال بودن سرویس‌های تغییردهندهٔ DNS</b> (مانند شکن، ۴۰۳) و نرم‌افزارهای فیلترشکن اطمینان حاصل فرمایید. داده‌های شما در این مرورگر ذخیره می‌شوند تا نمودار روند شکل بگیرد.
                 </div>
             </div>
 
@@ -178,8 +177,14 @@ export default {
                         <div class="freedom-score" id="freedom-score">--%</div>
                     </div>
                 </div>
-                <p id="summary-text" style="font-size: 0.95rem; color: var(--muted);">
-                    لطفاً چند لحظه صبر کنید. داده‌های شما به صورت ناشناس برای تحلیل وضعیت شبکه به رادار ارسال می‌شود.
+                
+                <!-- 📈 نمودار خطی اینجا قرار می‌گیرد -->
+                <div class="chart-container">
+                    <canvas id="historyChart"></canvas>
+                </div>
+                
+                <p id="summary-text" style="font-size: 0.95rem; color: var(--muted); text-align: center; margin-top: 10px;">
+                    در حال دریافت داده‌های اولیه...
                 </p>
             </div>
 
@@ -204,20 +209,14 @@ export default {
         </div>
 
         <div id="ads" class="tab-content">
-            <div class="page-header"><div><h1>فرصت‌های همکاری و اسپانسری</h1><p>برند خود را به هزاران کاربر فعال و متخصص معرفی کنید.</p></div></div>
+            <div class="page-header"><div><h1>فرصت‌های همکاری و اسپانسری</h1><p>برند خود را به هزاران کاربر فعال معرفی کنید.</p></div></div>
             <div class="card" style="max-width: 700px; margin: 0 auto; text-align: center; padding: 40px 25px;">
                 <div class="info-box">
                     <h3><i class="fa-solid fa-handshake"></i> چرا با رادار اینترنت ایران همکاری کنیم؟</h3>
                     <p>پلتفرم «رادار اینترنت ایران» با ارائه داده‌های دقیق و لحظه‌ای از وضعیت شبکه، مخاطبان خاص و ارزشمندی را جذب کرده است. با همکاری با ما، می‌توانید برند، محصول یا خدمات خود را در معرض دید این جامعه هدف قرار دهید.</p>
-                    <ul>
-                        <li><b>تبلیغات:</b> درج بنر یا پست تبلیغاتی در کانال‌ها و ربات‌ها.</li>
-                        <li><b>اسپانسری:</b> همکاری داده‌ای و مالی برای توسعه زیرساخت‌ها.</li>
-                    </ul>
                 </div>
-
                 <h3 style="margin-bottom: 15px; font-size: 1.3rem;">برای ثبت درخواست، وارد ربات شوید</h3>
-                <p style="color: var(--muted); margin-bottom: 25px;">جهت حفظ امنیت و پیگیری سریع‌تر، فرم درخواست اسپانسری به داخل ربات تلگرام منتقل شده است. لطفاً از طریق دکمه زیر وارد ربات شده و گزینه «درخواست اسپانسری» را از منوی اصلی انتخاب کنید.</p>
-                
+                <p style="color: var(--muted); margin-bottom: 25px;">جهت حفظ امنیت و پیگیری سریع‌تر، فرم درخواست اسپانسری به داخل ربات تلگرام منتقل شده است.</p>
                 <a href="https://t.me/Radarinternetiranbot" target="_blank" class="btn-tg" style="display: inline-flex; width: auto; padding: 15px 40px; font-size: 1.1rem; background: var(--gold); color: #000;">
                     <i class="fa-brands fa-telegram"></i> ورود به ربات و ارسال درخواست
                 </a>
@@ -232,6 +231,11 @@ export default {
     <script>
         document.getElementById('year').textContent = new Date().getFullYear();
         const BOT_API_URL = "${BOT_API_URL}";
+        
+        // متغیرهای نمودار
+        let historyChart = null;
+        const STORAGE_KEY = 'radar_history_v2'; // کلید ذخیره‌سازی در مرورگر
+        const ONE_HOUR_MS = 60 * 60 * 1000; // ۱ ساعت به میلی‌ثانیه
 
         function switchTab(tabId, element) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -241,6 +245,7 @@ export default {
             if(tabId === 'ip-tool') fetchIPs();
         }
 
+        // تابع تست با متد GET برای دقت بالاتر در سایت‌های داخلی
         async function testSite(domain) {
             const start = performance.now();
             const controller = new AbortController();
@@ -248,7 +253,7 @@ export default {
 
             try {
                 await fetch('https://' + domain, {
-                    method: 'HEAD',
+                    method: 'GET',
                     mode: 'no-cors',
                     signal: controller.signal,
                     cache: 'no-store'
@@ -257,6 +262,7 @@ export default {
                 return { success: true, time: Math.round(performance.now() - start) };
             } catch (error) {
                 clearTimeout(timeoutId);
+                // فالبک: تلاش برای لود فاوآیکون
                 return new Promise((resolve) => {
                     const img = new Image();
                     const imgTimeout = setTimeout(() => { img.src = ''; resolve({ success: false, time: 0 }); }, 2000);
@@ -299,6 +305,10 @@ export default {
         ];
 
         async function runTests() {
+            // پاک کردن نتایج قبلی برای تست جدید (اختیاری، اما برای آپدیت بهتر است)
+            document.getElementById('foreign-sites').innerHTML = '';
+            document.getElementById('domestic-sites').innerHTML = '';
+
             const fContainer = document.getElementById('foreign-sites');
             const dContainer = document.getElementById('domestic-sites');
             
@@ -325,6 +335,7 @@ export default {
             const successCount = foreignResults.filter(r => r.success).length;
             const freedomPercent = Math.round((successCount / foreignResults.length) * 100);
             
+            // نمایش شاخص
             const scoreEl = document.getElementById('freedom-score');
             scoreEl.textContent = freedomPercent + '%';
             if(freedomPercent > 70) scoreEl.style.color = 'var(--primary)';
@@ -333,7 +344,82 @@ export default {
 
             document.getElementById('summary-text').textContent = freedomPercent >= 50 ? "اینترنت شما در وضعیت نسبتاً آزادی قرار دارد." : "دسترسی شما به سرویس‌های خارجی با محدودیت جدی مواجه است.";
 
+            // ذخیره داده و آپدیت نمودار
+            saveDataAndUpdateChart(freedomPercent);
+            
+            // ارسال به ربات
             sendDataToBot(freedomPercent, results);
+        }
+
+        // تابع ذخیره در حافظه و رسم نمودار
+        function saveDataAndUpdateChart(newScore) {
+            let history = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            const now = Date.now();
+
+            // اضافه کردن داده جدید
+            history.push({ time: now, score: newScore });
+
+            // فیلتر کردن داده‌های قدیمی‌تر از ۱ ساعت
+            history = history.filter(item => now - item.time <= ONE_HOUR_MS);
+
+            // ذخیره در localStorage
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+
+            renderLineChart(history);
+        }
+
+        function renderLineChart(history) {
+            const ctx = document.getElementById('historyChart').getContext('2d');
+            
+            const labels = history.map(item => {
+                const d = new Date(item.time);
+                return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+            });
+            const dataPoints = history.map(item => item.score);
+
+            if (historyChart) { historyChart.destroy(); }
+
+            // اگر تنها یک نقطه داریم، یک نقطه دیگر فیک می‌سازیم تا خط کشیده شود (فقط برای نمایش زیبا)
+            if (labels.length === 1) {
+                labels.unshift("شروع");
+                dataPoints.unshift(dataPoints[0]);
+            }
+
+            historyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'شاخص آزادی اینترنت (%)',
+                        data: dataPoints,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4, // انحنای خط
+                        fill: true,
+                        pointBackgroundColor: '#10b981',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'دسترسی: ' + context.parsed.y + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#9ca3af', font: { family: 'Vazirmatn', size: 10 } }, grid: { display: false } },
+                        y: { min: 0, max: 100, ticks: { color: '#9ca3af', stepSize: 20 }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    }
+                }
+            });
         }
 
         async function sendDataToBot(score, results) {
@@ -345,11 +431,7 @@ export default {
                 await fetch(BOT_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        isp: geo.isp,
-                        freedomScore: score,
-                        results: results
-                    })
+                    body: JSON.stringify({ isp: geo.isp, freedomScore: score, results: results })
                 });
             } catch (e) { console.log("خطا در ارسال داده به ربات:", e); }
         }
@@ -366,7 +448,20 @@ export default {
             document.getElementById('user-city').textContent = geo.city || 'نامشخص';
         }
 
-        window.onload = () => { runTests(); };
+        // 👇 شروع کار با لود سایت 👇
+        window.onload = () => { 
+            // ۱. رسم نمودار با داده‌های قبلی (اگر وجود داشته باشد)
+            let savedHistory = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            const now = Date.now();
+            savedHistory = savedHistory.filter(item => now - item.time <= ONE_HOUR_MS);
+            renderLineChart(savedHistory);
+
+            // ۲. اجرای اولین تست
+            runTests(); 
+
+            // ۳. تنظیم تایمر برای اجرای خودکار تست هر ۲ دقیقه
+            setInterval(runTests, 120000);
+        };
     </script>
 </body>
 </html>
