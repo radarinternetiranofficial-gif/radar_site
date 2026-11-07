@@ -2,75 +2,36 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // ==================== 1. API for Client IP ====================
+    // ==================== API برای دریافت آی‌پی و اپراتور ====================
     if (url.pathname === '/api/myip') {
       const clientIP = request.headers.get('CF-Connecting-IP') || "نامشخص";
       const country = request.cf?.country || "نامشخص";
       const city = request.cf?.city || "نامشخص";
-      return new Response(JSON.stringify({ ip: clientIP, country, city }), {
+      const asn = request.cf?.asn || 0;
+      
+      // جدول تشخیص اپراتورهای ایران بر اساس ASN
+      const ISP_MAP = {
+        "44244": "ایرانسل", "197207": "همراه اول", "58224": "مخابرات (TCI)",
+        "31549": "شاتل", "42337": "پارس آنلاین", "43754": "آسیاتک",
+        "57218": "رایتل", "16322": "پارس پک", "48159": "پیشگامان",
+        "25184": "افرانت", "56402": "صبانت", "21478": "مبین نت",
+        "12880": "زیرساخت (DCI)", "57497": "شاتل موبایل", "48434": "پارس آنلاین",
+        "51685": "پارس پک", "51074": "شاتل", "52140": "ایران سرور",
+        "201150": "کیان نت", "39501": "ابر آروان", "49100": "ارتباطات زیرساخت"
+      };
+      
+      let ispName = ISP_MAP[String(asn)] || "ناشناس";
+      if (asn === 0) ispName = "شبکه محلی";
+
+      return new Response(JSON.stringify({ ip: clientIP, country, city, asn, isp: ispName }), {
         headers: { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" }
       });
     }
 
-    // ==================== 2. API for Ads Request Form (Telegram Direct) ====================
-    if (url.pathname === '/api/ads_request' && request.method === 'POST') {
-      try {
-        const body = await request.json();
-        const { fname, lname, business, phone, reqType, desc } = body;
-        
-        const BOT_TOKEN = env.BOT_TOKEN;
-        if (!BOT_TOKEN) {
-          return new Response(JSON.stringify({ ok: false, error: "توکن ربات (BOT_TOKEN) در تنظیمات کلادفلر ثبت نشده است." }), {
-            status: 500, headers: { "Content-Type": "application/json; charset=utf-8" }
-          });
-        }
-
-        // جلوگیری از خطای HTML در تلگرام (اگر کاربر از کدهای خاص استفاده کرد)
-        const escapeHTML = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-        // متن پیام ارسالی به ادمین
-        const msg = `📢 <b>درخواست جدید (${escapeHTML(reqType)}) از سایت</b>\n\n👤 نام: <b>${escapeHTML(fname)} ${escapeHTML(lname)}</b>\n💼 حوزه کاری/برند: ${escapeHTML(business)}\n📞 شماره تماس: <code>${escapeHTML(phone)}</code>\n\n📝 <b>توضیحات:</b>\n${escapeHTML(desc || "بدون توضیحات")}\n\n⏰ زمان ثبت: ${new Date().toLocaleString('fa-IR')}`;
-        
-        // آیدی‌های ادمین
-        const ADMIN_IDS = ["8344700031", "7652496428"];
-        let sent = false;
-        let tgErrors = [];
-
-        for (const adminId of ADMIN_IDS) {
-          const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: adminId, text: msg, parse_mode: 'HTML' })
-          });
-          
-          const tgData = await res.json();
-          if (tgData.ok) {
-            sent = true;
-          } else {
-            // اگر تلگرام خطا داد، متن خطا را ذخیره می‌کنیم
-            tgErrors.push(`ID ${adminId}: ${tgData.description}`);
-          }
-        }
-        
-        if (sent) {
-          return new Response(JSON.stringify({ ok: true, message: "درخواست با موفقیت ارسال شد" }), {
-            headers: { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" }
-          });
-        } else {
-          // اگر ارسال ناموفق بود، خطای دقیق تلگرام را به سایت برمی‌گردانیم
-          return new Response(JSON.stringify({ ok: false, error: `خطای تلگرام: ${tgErrors.join(' | ')}` }), {
-            status: 500, headers: { "Content-Type": "application/json; charset=utf-8" }
-          });
-        }
-      } catch (e) {
-        return new Response(JSON.stringify({ ok: false, error: e.message }), {
-          status: 500, headers: { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" }
-        });
-      }
-    }
-
-    // ==================== 3. Main HTML Dashboard ====================
     const today = new Date().toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' });
+    
+    // ✅ آدرس API ربات شما (تغییر داده شد و آماده است)
+    const BOT_API_URL = "https://radar-bot.royal-trust-ir-official.workers.dev/api/report_test";
 
     const htmlContent = `
 <!DOCTYPE html>
@@ -79,99 +40,96 @@ export default {
     <meta name="google-site-verification" content="Oskdq7_86up9xROsMJqIpKZ_cTczPZ5ZCNroOT-bnCc" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>رادار اینترنت ایران | تست هوشمند آزادی اینترنت</title>
+    <meta name="description" content="با ورود به سایت، وضعیت دسترسی خود به سرویس‌های داخلی و خارجی را بسنجید.">
     
-    <title>رادار اینترنت ایران | داشبورد زنده وضعیت شبکه</title>
-    <meta name="description" content="رادار اینترنت ایران، سامانه رسمی و هوشمند پایش آنلاین شبکه. مشاهده وضعیت قطعی، فیلترینگ، آی‌پی و درخواست اسپانسری.">
-    
+    <!-- 🚀 تگ‌های Open Graph -->
+    <meta property="og:title" content="رادار اینترنت ایران | تست آزادی اینترنت">
+    <meta property="og:description" content="با ورود به سایت، وضعیت دسترسی اینترنت خود را بسنجید.">
+    <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/2933/2933942.png">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2933/2933942.png">
+
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* ... (استایل‌ها دقیقاً مثل قبل است، برای کوتاه شدن کد حذف شدند، اما در فایل نهایی شما هستند) ... */
-        :root { --bg: #030712; --surface: rgba(17, 24, 39, 0.7); --text: #f9fafb; --muted: #9ca3af; --primary: #10b981; --blue: #3b82f6; --gold: #f59e0b; --border: rgba(255, 255, 255, 0.08); --sidebar-width: 260px; }
+        :root { --bg: #030712; --surface: rgba(17, 24, 39, 0.7); --text: #f9fafb; --muted: #9ca3af; --primary: #10b981; --blue: #3b82f6; --gold: #f59e0b; --red: #ef4444; --border: rgba(255, 255, 255, 0.08); --sidebar-width: 260px; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Vazirmatn', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--bg); color: var(--text); line-height: 1.8; overflow-x: hidden; display: flex; height: 100vh; background-image: radial-gradient(circle at 50% -20%, rgba(16, 185, 129, 0.1), transparent 40%); background-attachment: fixed; }
         a { text-decoration: none; color: inherit; transition: 0.3s; }
-        .live-dot { display: inline-block; width: 10px; height: 10px; background-color: var(--primary); border-radius: 50%; margin-left: 8px; box-shadow: 0 0 10px var(--primary); animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
-        .sidebar { width: var(--sidebar-width); background: rgba(3, 7, 18, 0.95); backdrop-filter: blur(20px); border-left: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; position: fixed; top: 0; right: 0; height: 100vh; z-index: 1000; transition: 0.3s; }
+        
+        /* سایدبار */
+        .sidebar { width: var(--sidebar-width); background: rgba(3, 7, 18, 0.95); backdrop-filter: blur(20px); border-left: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; position: fixed; top: 0; right: 0; height: 100vh; z-index: 1000; }
         .logo { font-size: 1.3rem; font-weight: 900; display: flex; align-items: center; gap: 10px; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
         .logo i { color: var(--primary); font-size: 1.6rem; }
         .nav-menu { display: flex; flex-direction: column; gap: 8px; flex: 1; }
         .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 12px; color: var(--muted); font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 0.95rem; }
         .nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
         .nav-item.active { background: rgba(16, 185, 129, 0.1); color: var(--primary); border-right: 3px solid var(--primary); }
-        .nav-item i { width: 20px; text-align: center; font-size: 1.1rem; }
+        .nav-item i { width: 20px; text-align: center; }
         .sidebar-footer { padding-top: 20px; border-top: 1px solid var(--border); text-align: center; }
-        .btn-tg { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: var(--blue); color: #fff; border-radius: 10px; font-weight: bold; font-size: 0.9rem; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); border: none; cursor: pointer; }
-        .btn-tg:hover { background: #2563eb; transform: translateY(-2px); }
+        .btn-tg { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: var(--blue); color: #fff; border-radius: 10px; font-weight: bold; font-size: 0.9rem; border: none; cursor: pointer; }
+        .btn-tg:hover { background: #2563eb; }
+        
+        /* محتوا */
         .main-content { flex: 1; margin-right: var(--sidebar-width); padding: 40px; overflow-y: auto; height: 100vh; display: flex; flex-direction: column; }
         .tab-content { display: none; animation: fadeIn 0.4s ease; flex: 1; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .page-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
         .page-header h1 { font-size: 2rem; font-weight: 900; margin-bottom: 10px; }
-        .page-header p { color: var(--muted); font-size: 1rem; display: flex; align-items: center; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .card { background: var(--surface); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 16px; padding: 25px; transition: 0.3s; }
-        .card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-3px); }
-        .info-box { background: rgba(245, 158, 11, 0.05); border-right: 4px solid var(--gold); padding: 20px; border-radius: 12px; margin-bottom: 30px; text-align: justify; }
-        .info-box h3 { color: var(--gold); margin-bottom: 10px; font-size: 1.2rem; }
-        .info-box p { color: var(--muted); font-size: 0.95rem; line-height: 1.9; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 0.9rem; font-weight: 600; }
-        .form-control { width: 100%; padding: 14px 16px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: inherit; font-size: 1rem; transition: 0.3s; }
-        .form-control:focus { outline: none; border-color: var(--primary); background: rgba(16, 185, 129, 0.05); }
-        select.form-control { appearance: none; cursor: pointer; }
-        textarea.form-control { resize: vertical; min-height: 100px; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .btn-submit { width: 100%; padding: 15px; background: var(--primary); color: #000; font-weight: bold; font-size: 1.1rem; border: none; border-radius: 10px; cursor: pointer; transition: 0.3s; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 8px; }
-        .btn-submit:hover { background: #059669; }
-        .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; }
-        .alert { padding: 15px; border-radius: 10px; margin-bottom: 20px; display: none; font-weight: 600; text-align: center; }
-        .alert-success { background: rgba(16, 185, 129, 0.1); color: var(--primary); border: 1px solid var(--primary); }
-        .alert-error { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; }
-        .ip-container { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px 15px; }
-        .ip-icon { font-size: 3rem; color: var(--primary); margin-bottom: 15px; }
-        .ip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 600px; margin: 20px 0; }
-        .ip-card { background: rgba(0,0,0,0.3); border: 1px dashed var(--border); border-radius: 12px; padding: 15px; cursor: pointer; transition: 0.3s; text-align: center; position: relative; }
-        .ip-card:hover { background: rgba(255,255,255,0.05); border-color: var(--primary); }
-        .ip-card.copied { border-color: var(--primary); background: rgba(16, 185, 129, 0.1); }
-        .ip-title { font-size: 0.85rem; color: var(--muted); margin-bottom: 5px; font-weight: bold; letter-spacing: 1px; }
-        .ip-value { font-size: 1.1rem; font-weight: 800; color: var(--text); word-break: break-all; direction: ltr; }
-        .ip-details { display: flex; gap: 15px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }
-        .ip-badge { background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 8px 15px; border-radius: 50px; font-size: 0.85rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
-        .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        
+        .card { background: var(--surface); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 16px; padding: 25px; margin-bottom: 20px; }
+        
+        /* استایل تست هوشمند */
+        .test-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+        .isp-info { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: bold; color: var(--blue); }
+        .freedom-score { font-size: 2rem; font-weight: 900; color: var(--primary); }
+        
+        .sites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-top: 15px; }
+        .site-card { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 12px; padding: 15px 10px; text-align: center; transition: 0.3s; position: relative; overflow: hidden; }
+        .site-card.testing { border-color: var(--gold); }
+        .site-card.success { border-color: var(--primary); background: rgba(16, 185, 129, 0.1); }
+        .site-card.fail { border-color: var(--red); background: rgba(239, 68, 68, 0.1); }
+        
+        .site-card i { font-size: 1.8rem; margin-bottom: 8px; color: var(--muted); transition: 0.3s; }
+        .site-card.success i { color: var(--primary); }
+        .site-card.fail i { color: var(--red); }
+        .site-name { font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; }
+        .site-ping { font-size: 0.75rem; color: var(--muted); direction: ltr; }
+        
+        /* اسپینر لودینگ */
+        .spinner { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--gold); border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; margin: 5px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .main-footer { border-top: 1px solid var(--border); padding-top: 20px; margin-top: auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; color: var(--muted); font-size: 0.85rem; }
-        .footer-socials { display: flex; gap: 10px; }
-        .footer-socials a { width: 35px; height: 35px; border-radius: 8px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-        .footer-socials a:hover { background: var(--primary); color: #000; }
+        
+        .ip-container { display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .ip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 600px; margin: 20px 0; }
+        .ip-card { background: rgba(0,0,0,0.3); border: 1px dashed var(--border); border-radius: 12px; padding: 15px; cursor: pointer; }
+        .ip-badge { background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 8px 15px; border-radius: 50px; font-size: 0.85rem; margin: 5px; display: inline-flex; align-items: center; gap: 8px; }
+        
+        .main-footer { border-top: 1px solid var(--border); padding-top: 20px; margin-top: auto; text-align: center; color: var(--muted); font-size: 0.85rem; }
+        
         @media (max-width: 900px) {
             body { flex-direction: column; }
-            .sidebar { width: 100%; height: 70px; top: auto; bottom: 0; right: 0; flex-direction: row; border-left: none; border-top: 1px solid var(--border); padding: 0 10px; justify-content: space-around; align-items: center; }
+            .sidebar { width: 100%; height: 70px; top: auto; bottom: 0; right: 0; flex-direction: row; border-left: none; border-top: 1px solid var(--border); padding: 0 10px; justify-content: space-around; }
             .logo, .sidebar-footer { display: none; }
-            .nav-menu { flex-direction: row; justify-content: space-around; width: 100%; gap: 0; }
-            .nav-item { flex-direction: column; padding: 8px; font-size: 0.75rem; gap: 4px; border-right: none; border-radius: 8px; }
-            .nav-item.active { border-right: none; border-bottom: 3px solid var(--primary); border-radius: 8px 8px 0 0; }
-            .nav-item i { font-size: 1.3rem; }
+            .nav-menu { flex-direction: row; justify-content: space-around; width: 100%; }
+            .nav-item { flex-direction: column; padding: 8px; font-size: 0.75rem; border-right: none; }
+            .nav-item.active { border-right: none; border-bottom: 3px solid var(--primary); }
             .main-content { margin-right: 0; padding: 20px; height: calc(100vh - 70px); padding-bottom: 90px; }
-            .grid-2, .form-row, .ip-grid { grid-template-columns: 1fr; }
-            .page-header h1 { font-size: 1.6rem; }
-            .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-            .main-footer { flex-direction: column; text-align: center; }
+            .ip-grid { grid-template-columns: 1fr; }
+            .sites-grid { grid-template-columns: repeat(3, 1fr); }
+            .page-header { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
 <body>
-
     <aside class="sidebar">
         <div class="logo"><i class="fa-solid fa-satellite-dish"></i> رادار ایران</div>
         <div class="nav-menu">
-            <div class="nav-item active" onclick="switchTab('dashboard', this)"><i class="fa-solid fa-chart-pie"></i> داشبورد</div>
+            <div class="nav-item active" onclick="switchTab('dashboard', this)"><i class="fa-solid fa-tower-broadcast"></i> تست زنده</div>
             <div class="nav-item" onclick="switchTab('ip-tool', this)"><i class="fa-solid fa-network-wired"></i> آی‌پی من</div>
-            <div class="nav-item" onclick="switchTab('ads', this)"><i class="fa-solid fa-bullhorn"></i> درخواست اسپانسری</div>
-            <div class="nav-item" onclick="switchTab('api', this)"><i class="fa-solid fa-code"></i> API</div>
+            <div class="nav-item" onclick="switchTab('ads', this)"><i class="fa-solid fa-bullhorn"></i> اسپانسری</div>
         </div>
         <div class="sidebar-footer">
             <a href="https://t.me/Radarinternetiranbot" target="_blank" class="btn-tg"><i class="fa-brands fa-telegram"></i> ورود به ربات</a>
@@ -179,250 +137,187 @@ export default {
     </aside>
 
     <main class="main-content">
+        <!-- تب تست هوشمند -->
         <div id="dashboard" class="tab-content active">
             <div class="page-header">
                 <div>
-                    <h1>داشبورد وضعیت شبکه</h1>
-                    <p><span class="live-dot"></span> سیستم پایش زنده فعال است • بروزرسانی: ${today}</p>
+                    <h1>تست هوشمند آزادی اینترنت</h1>
+                    <p>سایت در حال بررسی وضعیت دسترسی شما به ۱۶ سرویس مختلف است...</p>
                 </div>
             </div>
-            <div class="grid-2" style="margin-bottom: 20px;">
-                <div class="card" style="text-align: center;">
-                    <h3 style="color: var(--muted); font-size: 0.9rem; margin-bottom: 10px;"><i class="fa-solid fa-wifi"></i> وضعیت کلی شبکه</h3>
-                    <div style="font-size: 1.8rem; font-weight: 900; color: var(--primary);">پایدار</div>
-                </div>
-                <div class="card" style="text-align: center;">
-                    <h3 style="color: var(--muted); font-size: 0.9rem; margin-bottom: 10px;"><i class="fa-solid fa-shield-halved"></i> سطح فیلترینگ</h3>
-                    <div style="font-size: 1.8rem; font-weight: 900; color: var(--gold);">متوسط</div>
-                </div>
-            </div>
-            <div class="card" style="text-align: center; padding: 40px 20px;">
-                <h2 style="font-size: 1.5rem; margin-bottom: 15px;">گزارش کامل در تلگرام</h2>
-                <p style="color: var(--muted); margin-bottom: 25px;">برای مشاهده نمودارهای زنده، نقشه حرارتی و تست سرعت، وارد ربات شوید.</p>
-                <a href="https://t.me/Radarinternetiranbot" target="_blank" class="btn-tg" style="display: inline-flex; width: auto; padding: 12px 30px;"><i class="fa-brands fa-telegram"></i> دریافت گزارش از ربات</a>
-            </div>
-        </div>
 
-        <div id="ip-tool" class="tab-content">
-            <div class="page-header">
-                <div>
-                    <h1>ابزار تشخیص آی‌پی</h1>
-                    <p>آی‌پی و موقعیت جغرافیایی شما بر اساس اتصال به شبکه.</p>
-                </div>
-            </div>
-            <div class="card ip-container">
-                <div class="ip-icon"><i class="fa-solid fa-globe"></i></div>
-                <h3 style="color: var(--muted);">آی‌پی‌های فعلی شما</h3>
-                <p style="color: var(--muted); font-size: 0.85rem; margin-top: 5px;">برای کپی، روی هر کدام کلیک کنید.</p>
-                <div id="ip-loading">
-                    <div class="spinner"></div>
-                    <p style="color: var(--muted); font-size: 0.9rem;">در حال دریافت اطلاعات...</p>
-                </div>
-                <div id="ip-result" style="display: none; width: 100%;">
-                    <div class="ip-grid">
-                        <div class="ip-card" id="card-ipv4" onclick="copyText('ipv4-val', 'card-ipv4')">
-                            <div class="ip-title">IPv4</div>
-                            <div class="ip-value" id="ipv4-val">دریافت...</div>
-                        </div>
-                        <div class="ip-card" id="card-ipv6" onclick="copyText('ipv6-val', 'card-ipv6')">
-                            <div class="ip-title">IPv6</div>
-                            <div class="ip-value" id="ipv6-val">دریافت...</div>
-                        </div>
+            <!-- کارت خلاصه وضعیت -->
+            <div class="card" id="summary-card">
+                <div class="test-header">
+                    <div class="isp-info">
+                        <i class="fa-solid fa-wifi"></i> اپراتور شما: <span id="isp-name" style="color: var(--gold);">در حال شناسایی...</span>
                     </div>
-                    <div class="ip-details">
-                        <div class="ip-badge"><i class="fa-solid fa-flag"></i> کشور: <span id="user-country" style="color: var(--text); font-weight: bold; margin-right: 5px;">---</span></div>
-                        <div class="ip-badge"><i class="fa-solid fa-location-dot"></i> شهر: <span id="user-city" style="color: var(--text); font-weight: bold; margin-right: 5px;">---</span></div>
+                    <div style="text-align: left;">
+                        <div style="font-size: 0.8rem; color: var(--muted);">شاخص آزادی (خارجی)</div>
+                        <div class="freedom-score" id="freedom-score">--%</div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <div id="ads" class="tab-content">
-            <div class="page-header">
-                <div>
-                    <h1>فرصت‌های همکاری و اسپانسری</h1>
-                    <p>برند خود را به هزاران کاربر فعال و متخصص در حوزه فناوری معرفی کنید.</p>
-                </div>
-            </div>
-            
-            <div class="card" style="max-width: 650px; margin: 0 auto;">
-                <div class="info-box">
-                    <h3><i class="fa-solid fa-handshake"></i> چرا با رادار اینترنت ایران همکاری کنیم؟</h3>
-                    <p>پلتفرم «رادار اینترنت ایران» با ارائه داده‌های دقیق و لحظه‌ای از وضعیت شبکه، مخاطبان خاص و ارزشمندی را جذب کرده است. با همکاری با ما، می‌توانید برند خود را در معرض دید این جامعه هدف قرار دهید. ما دو نوع همکاری ارائه می‌دهیم: <b>تبلیغات (درج بنر/پست)</b> و <b>اسپانسری (همکاری داده‌ای و مالی)</b>.</p>
-                </div>
-
-                <div id="form-alert" class="alert"></div>
-                
-                <form id="ads-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>نام</label>
-                            <input type="text" id="fname" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label>نام خانوادگی</label>
-                            <input type="text" id="lname" class="form-control" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>حوزه کاری / نام برند</label>
-                        <input type="text" id="business" class="form-control" placeholder="مثال: فروشگاه لوازم دیجیتال" required>
-                    </div>
-                    <div class="form-group">
-                        <label>شماره تماس</label>
-                        <input type="tel" id="phone" class="form-control" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>نوع درخواست</label>
-                        <select id="reqType" class="form-control" required>
-                            <option value="تبلیغات (درج بنر/پست)">تبلیغات (درج بنر/پست)</option>
-                            <option value="اسپانسری (همکاری داده‌ای/مالی)">اسپانسری (همکاری داده‌ای/مالی)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>توضیحات بیشتر (اختیاری)</label>
-                        <textarea id="desc" class="form-control" placeholder="لطفاً در صورت نیاز، درباره کسب‌وکار و نوع همکاری مورد نظر خود توضیح دهید..."></textarea>
-                    </div>
-                    
-                    <button type="submit" id="submit-btn" class="btn-submit">
-                        <i class="fa-solid fa-paper-plane"></i> ارسال درخواست
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <div id="api" class="tab-content">
-            <div class="page-header">
-                <div>
-                    <h1>API اختصاصی</h1>
-                    <p>دسترسی توسعه‌دهندگان به داده‌های خام رادار.</p>
-                </div>
-            </div>
-            <div class="card" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.5), rgba(245, 158, 11, 0.05)); border-color: rgba(245, 158, 11, 0.3);">
-                <h3 style="color: var(--gold); margin-bottom: 15px;"><i class="fa-solid fa-handshake"></i> شرایط همکاری</h3>
-                <p style="color: var(--muted); font-size: 0.95rem; line-height: 1.8;">
-                    داده‌های تحلیل‌شده رادار (JSON) در اختیار استارتاپ‌ها و محققان قرار می‌گیرد. 
-                    <br><br>
-                    <b>شرط استفاده:</b> دریافت‌کنندگان موظفند در سرویس خود، عبارت <b>«رادار اینترنت ایران»</b> را به عنوان اسپانسر داده و منبع رسمی معرفی کنند.
+                <p id="summary-text" style="font-size: 0.95rem; color: var(--muted);">
+                    لطفاً چند لحظه صبر کنید. داده‌های شما به صورت ناشناس برای تحلیل وضعیت شبکه به رادار ارسال می‌شود.
                 </p>
-                <a href="https://t.me/Adddddddm" target="_blank" class="btn-tg" style="background: var(--gold); color: #000; margin-top: 20px; display: inline-flex; width: auto;">
-                    <i class="fa-solid fa-paper-plane"></i> درخواست کلید API
-                </a>
+            </div>
+
+            <!-- شبکه تست -->
+            <div class="card">
+                <h3 style="margin-bottom: 15px; font-size: 1.1rem; color: var(--blue);"><i class="fa-solid fa-globe"></i> سرویس‌های خارجی (ملاک آزادی)</h3>
+                <div class="sites-grid" id="foreign-sites"></div>
+
+                <h3 style="margin: 30px 0 15px; font-size: 1.1rem; color: var(--primary);"><i class="fa-solid fa-house"></i> سرویس‌های داخلی (ملاک پایداری)</h3>
+                <div class="sites-grid" id="domestic-sites"></div>
+            </div>
+        </div>
+
+        <!-- تب آی پی -->
+        <div id="ip-tool" class="tab-content">
+            <div class="page-header"><div><h1>ابزار تشخیص آی‌پی</h1><p>آی‌پی و موقعیت شما.</p></div></div>
+            <div class="card ip-container">
+                <div class="ip-grid">
+                    <div class="ip-card"><div style="font-size:0.8rem;color:var(--muted)">IPv4</div><div id="ipv4-val" style="font-weight:bold; direction:ltr;">...</div></div>
+                    <div class="ip-card"><div style="font-size:0.8rem;color:var(--muted)">IPv6</div><div id="ipv6-val" style="font-weight:bold; direction:ltr;">...</div></div>
+                </div>
+                <div><span class="ip-badge"><i class="fa-solid fa-flag"></i> <span id="user-country">...</span></span><span class="ip-badge"><i class="fa-solid fa-location-dot"></i> <span id="user-city">...</span></span></div>
+            </div>
+        </div>
+
+        <!-- تب اسپانسری -->
+        <div id="ads" class="tab-content">
+            <div class="page-header"><div><h1>درخواست اسپانسری</h1><p>همکاری با رادار.</p></div></div>
+            <div class="card" style="text-align:center; padding: 40px;">
+                <p>برای ثبت درخواست تبلیغات یا اسپانسری، وارد ربات شوید.</p>
+                <a href="https://t.me/Radarinternetiranbot" class="btn-tg" style="margin-top:20px; display:inline-flex; width:auto;">ورود به ربات</a>
             </div>
         </div>
 
         <footer class="main-footer">
-            <div class="footer-socials">
-                <a href="https://t.me/radarinternetiran" target="_blank" title="کانال تلگرام"><i class="fa-brands fa-telegram"></i></a>
-                <a href="https://instagram.com/radar.internet.iran.official" target="_blank" title="اینستاگرام"><i class="fa-brands fa-instagram"></i></a>
-                <a href="https://t.me/radarinternetirangruop" target="_blank" title="گروه پشتیبانی"><i class="fa-solid fa-users"></i></a>
-            </div>
-            <div>
-                © <span id="year"></span> رادار اینترنت ایران. تمامی حقوق محفوظ است.
-            </div>
+            © <span id="year"></span> رادار اینترنت ایران. تمامی حقوق محفوظ است.
         </footer>
-
     </main>
 
     <script>
         document.getElementById('year').textContent = new Date().getFullYear();
+        const BOT_API_URL = "${BOT_API_URL}"; // آدرس ربات به صورت خودکار تزریق می‌شود
 
         function switchTab(tabId, element) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             element.classList.add('active');
-            if (tabId === 'ip-tool') { fetchClientIPs(); }
+            if(tabId === 'ip-tool') fetchIPs();
         }
 
-        async function fetchClientIPs() {
-            const loading = document.getElementById('ip-loading');
-            const result = document.getElementById('ip-result');
-            loading.style.display = 'block';
-            result.style.display = 'none';
-
-            const fetchIpv4 = fetch('https://api.ipify.org?format=json').then(r => r.json()).then(d => d.ip).catch(() => 'نامشخص');
-            const fetchIpv6 = fetch('https://api6.ipify.org?format=json').then(r => r.json()).then(d => d.ip).catch(() => 'نامشخص');
-            const fetchGeo = fetch('/api/myip').then(r => r.json()).catch(() => ({}));
-
-            try {
-                const [ipv4, ipv6, geo] = await Promise.all([fetchIpv4, fetchIpv6, fetchGeo]);
-                document.getElementById('ipv4-val').textContent = ipv4;
-                document.getElementById('ipv6-val').textContent = ipv6;
-                document.getElementById('user-country').textContent = geo.country || 'نامشخص';
-                document.getElementById('user-city').textContent = geo.city || 'نامشخص';
-                loading.style.display = 'none';
-                result.style.display = 'block';
-            } catch (error) {
-                loading.innerHTML = '<p style="color: #ef4444;">خطا در دریافت اطلاعات.</p>';
-            }
+        // تابع تست یک سایت با روش لود عکس
+        function testSite(domain) {
+            return new Promise((resolve) => {
+                const start = performance.now();
+                const img = new Image();
+                const timeout = setTimeout(() => { img.src = ''; resolve({ success: false, time: 0 }); }, 4000); 
+                
+                img.onload = () => { clearTimeout(timeout); resolve({ success: true, time: Math.round(performance.now() - start) }); };
+                img.onerror = () => { clearTimeout(timeout); resolve({ success: false, time: 0 }); };
+                
+                img.src = 'https://' + domain + '/favicon.ico?t=' + Date.now();
+            });
         }
 
-        function copyText(textId, cardId) {
-            const textToCopy = document.getElementById(textId).innerText;
-            const card = document.getElementById(cardId);
-            if (textToCopy && textToCopy !== 'دریافت...' && textToCopy !== 'نامشخص') {
-                navigator.clipboard.writeText(textToCopy).then(() => {
-                    card.classList.add('copied');
-                    const originalText = document.getElementById(textId).innerText;
-                    document.getElementById(textId).innerText = 'کپی شد ✅';
-                    setTimeout(() => {
-                        card.classList.remove('copied');
-                        document.getElementById(textId).innerText = originalText;
-                    }, 1500);
-                });
-            }
-        }
+        // لیست سایت‌های خارجی
+        const foreignSites = [
+            { name: 'Instagram', domain: 'instagram.com', icon: 'fa-brands fa-instagram' },
+            { name: 'Telegram', domain: 'telegram.org', icon: 'fa-brands fa-telegram' },
+            { name: 'Twitter / X', domain: 'x.com', icon: 'fa-brands fa-x-twitter' },
+            { name: 'Facebook', domain: 'facebook.com', icon: 'fa-brands fa-facebook' },
+            { name: 'Google', domain: 'google.com', icon: 'fa-brands fa-google' },
+            { name: 'Google Play', domain: 'play.google.com', icon: 'fa-brands fa-google-play' },
+            { name: 'YouTube', domain: 'youtube.com', icon: 'fa-brands fa-youtube' },
+            { name: 'GitHub', domain: 'github.com', icon: 'fa-brands fa-github' },
+            { name: 'WhatsApp', domain: 'whatsapp.com', icon: 'fa-brands fa-whatsapp' },
+            { name: 'Wikipedia', domain: 'wikipedia.org', icon: 'fa-brands fa-wikipedia-w' }
+        ];
 
-        // ارسال فرم به بک‌اند ورکر (تلگرام)
-        document.getElementById('ads-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        // لیست سایت‌های داخلی
+        const domesticSites = [
+            { name: 'دیجی‌کالا', domain: 'digikala.com', icon: 'fa-solid fa-cart-shopping' },
+            { name: 'شاپرک', domain: 'shaparak.ir', icon: 'fa-solid fa-credit-card' },
+            { name: 'آپارات', domain: 'aparat.com', icon: 'fa-solid fa-video' },
+            { name: 'اسنپ', domain: 'snapp.ir', icon: 'fa-solid fa-car' },
+            { name: 'بله', domain: 'bale.ai', icon: 'fa-solid fa-comment-dots' },
+            { name: 'ایتا', domain: 'eitaa.com', icon: 'fa-solid fa-comments' }
+        ];
+
+        async function runTests() {
+            const fContainer = document.getElementById('foreign-sites');
+            const dContainer = document.getElementById('domestic-sites');
             
-            const btn = document.getElementById('submit-btn');
-            const alertBox = document.getElementById('form-alert');
+            let allSites = [];
+            foreignSites.forEach(s => { fContainer.innerHTML += \`<div class="site-card testing" id="card-\${s.domain}"><i class="\${s.icon}"></i><div class="site-name">\${s.name}</div><div class="site-ping" id="ping-\${s.domain}"><div class="spinner"></div></div></div>\`; allSites.push({...s, type: 'foreign'}); });
+            domesticSites.forEach(s => { dContainer.innerHTML += \`<div class="site-card testing" id="card-\${s.domain}"><i class="\${s.icon}"></i><div class="site-name">\${s.name}</div><div class="site-ping" id="ping-\${s.domain}"><div class="spinner"></div></div></div>\`; allSites.push({...s, type: 'domestic'}); });
+
+            const results = await Promise.all(allSites.map(async (site) => {
+                const res = await testSite(site.domain);
+                const card = document.getElementById('card-' + site.domain);
+                const pingBox = document.getElementById('ping-' + site.domain);
+                
+                if (res.success) {
+                    card.className = 'site-card success';
+                    pingBox.innerHTML = res.time + ' ms';
+                } else {
+                    card.className = 'site-card fail';
+                    pingBox.innerHTML = 'مسدود';
+                }
+                return { name: site.name, domain: site.domain, type: site.type, success: res.success, ping: res.time };
+            }));
+
+            const foreignResults = results.filter(r => r.type === 'foreign');
+            const successCount = foreignResults.filter(r => r.success).length;
+            const freedomPercent = Math.round((successCount / foreignResults.length) * 100);
             
-            const fname = document.getElementById('fname').value.trim();
-            const lname = document.getElementById('lname').value.trim();
-            const business = document.getElementById('business').value.trim();
-            const phone = document.getElementById('phone').value.trim();
-            const reqType = document.getElementById('reqType').value;
-            const desc = document.getElementById('desc').value.trim();
+            const scoreEl = document.getElementById('freedom-score');
+            scoreEl.textContent = freedomPercent + '%';
+            if(freedomPercent > 70) scoreEl.style.color = 'var(--primary)';
+            else if(freedomPercent > 30) scoreEl.style.color = 'var(--gold)';
+            else scoreEl.style.color = 'var(--red)';
 
-            btn.disabled = true;
-            btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0;"></div> در حال ارسال...';
-            alertBox.style.display = 'none';
+            document.getElementById('summary-text').textContent = freedomPercent >= 50 ? "اینترنت شما در وضعیت نسبتاً آزادی قرار دارد." : "دسترسی شما به سرویس‌های خارجی با محدودیت جدی مواجه است.";
 
+            sendDataToBot(freedomPercent, results);
+        }
+
+        async function sendDataToBot(score, results) {
             try {
-                const response = await fetch('/api/ads_request', {
+                const geoRes = await fetch('/api/myip');
+                const geo = await geoRes.json();
+                document.getElementById('isp-name').textContent = geo.isp;
+
+                // ارسال به ورکر ربات
+                await fetch(BOT_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fname, lname, business, phone, reqType, desc })
+                    body: JSON.stringify({
+                        isp: geo.isp,
+                        freedomScore: score,
+                        results: results
+                    })
                 });
-                
-                const data = await response.json();
+            } catch (e) { console.log("خطا در ارسال داده به ربات:", e); }
+        }
 
-                if (data.ok) {
-                    alertBox.className = 'alert alert-success';
-                    alertBox.textContent = '✅ درخواست شما با موفقیت ثبت شد.';
-                    alertBox.style.display = 'block';
-                    this.reset();
-                } else {
-                    // نمایش خطای دقیق تلگرام
-                    alertBox.className = 'alert alert-error';
-                    alertBox.textContent = '❌ ' + data.error;
-                    alertBox.style.display = 'block';
-                }
-            } catch (error) {
-                alertBox.className = 'alert alert-error';
-                alertBox.textContent = '❌ خطا در ارتباط با سرور. لطفاً اینترنت خود را بررسی کنید.';
-                alertBox.style.display = 'block';
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> ارسال درخواست';
-            }
-        });
+        async function fetchIPs() {
+            const fetch4 = fetch('https://api.ipify.org?format=json').then(r=>r.json()).then(d=>d.ip).catch(()=>'نامشخص');
+            const fetch6 = fetch('https://api6.ipify.org?format=json').then(r=>r.json()).then(d=>d.ip).catch(()=>'نامشخص');
+            const fetchGeo = fetch('/api/myip').then(r=>r.json()).catch(()=>({}));
+            
+            const [ip4, ip6, geo] = await Promise.all([fetch4, fetch6, fetchGeo]);
+            document.getElementById('ipv4-val').textContent = ip4;
+            document.getElementById('ipv6-val').textContent = ip6;
+            document.getElementById('user-country').textContent = geo.country || 'نامشخص';
+            document.getElementById('user-city').textContent = geo.city || 'نامشخص';
+        }
+
+        window.onload = () => { runTests(); };
     </script>
 </body>
 </html>
