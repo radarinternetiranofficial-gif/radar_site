@@ -27,21 +27,20 @@ export default {
     // ==================== API برای ذخیره داده‌های تست ====================
     if (url.pathname === '/api/save_test' && request.method === 'POST') {
       try {
-        const body = await request.json(); // { isp: "ایرانسل", score: 45 }
+        const body = await request.json();
         if (env.RADAR_KV) {
           let recent = await env.RADAR_KV.get('recent_tests') || '[]';
           let list = JSON.parse(recent);
           const now = Date.now();
           list.push({ t: now, i: body.isp, s: body.score });
-          // نگهداری فقط داده‌های ۱ ساعت اخیر برای جلوگیری از پر شدن حجم
-          list = list.filter(x => now - x.t < 3600000);
+          list = list.filter(x => now - x.t < 3600000); // فقط ۱ ساعت اخیر
           await env.RADAR_KV.put('recent_tests', JSON.stringify(list));
         }
         return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
       } catch (e) { return new Response(JSON.stringify({ ok: false }), { status: 500, headers: corsHeaders }); }
     }
 
-    // ==================== API برای دریافت داده‌های نمودار جمعی ====================
+    // ==================== API برای دریافت داده‌های نمودار جمعی (اصلاح ساعت) ====================
     if (url.pathname === '/api/get_charts') {
       let list = [];
       if (env.RADAR_KV) {
@@ -53,18 +52,26 @@ export default {
       const labels = [];
       const buckets = {}; 
       
-      // ساخت ۶۰ دقیقه اخیر
+      // 🚀 تنظیم دقیق ساعت به وقت ایران
+      const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'Asia/Tehran',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+      });
+
+      // ساخت ۶۰ دقیقه اخیر با ساعت ایران
       for (let i = 59; i >= 0; i--) {
         const time = new Date(now - i * 60000);
-        const timeStr = time.getHours().toString().padStart(2, '0') + ':' + time.getMinutes().toString().padStart(2, '0');
+        const timeStr = formatter.format(time); // مثلا "16:05"
         labels.push(timeStr);
         buckets[timeStr] = { total: [], mci: [], irancell: [], tci: [], other: [] };
       }
 
-      // پر کردن داده‌ها
+      // پر کردن داده‌ها بر اساس ساعت ایران
       list.forEach(item => {
         const time = new Date(item.t);
-        const timeStr = time.getHours().toString().padStart(2, '0') + ':' + time.getMinutes().toString().padStart(2, '0');
+        const timeStr = formatter.format(time);
         if (buckets[timeStr]) {
           buckets[timeStr].total.push(item.s);
           if (item.i.includes('همراه اول')) buckets[timeStr].mci.push(item.s);
@@ -101,7 +108,6 @@ export default {
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- کتابخانه Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
@@ -212,7 +218,6 @@ export default {
                 </div>
             </div>
 
-            <!-- نمودار جمعی (Multi-line) -->
             <div class="card">
                 <h3 style="margin-bottom: 15px; font-size: 1.1rem; color: var(--blue);"><i class="fa-solid fa-chart-line"></i> نمودار آزادی اینترنت (۱ ساعت گذشته)</h3>
                 <div class="chart-container">
@@ -220,7 +225,6 @@ export default {
                 </div>
             </div>
 
-            <!-- تست اختصاصی کاربر -->
             <div class="card" id="summary-card">
                 <div class="test-header">
                     <div class="isp-info">
@@ -246,7 +250,6 @@ export default {
             </div>
         </div>
 
-        <!-- سایر تب‌ها (آی‌پی و اسپانسری) -->
         <div id="ip-tool" class="tab-content">
             <div class="page-header"><div><h1>ابزار تشخیص آی‌پی</h1></div></div>
             <div class="card ip-container">
@@ -289,7 +292,6 @@ export default {
             if(tabId === 'ip-tool') fetchIPs();
         }
 
-        // تابع تست سایت‌ها
         async function testSite(domain) {
             const start = performance.now();
             const controller = new AbortController();
@@ -378,31 +380,26 @@ export default {
 
             document.getElementById('summary-text').textContent = freedomPercent >= 50 ? "اینترنت شما در وضعیت نسبتاً آزادی قرار دارد." : "دسترسی شما به سرویس‌های خارجی با محدودیت جدی مواجه است.";
 
-            // ذخیره در دیتابیس سایت و ارسال به ربات
             saveToSiteDB(freedomPercent);
             sendDataToBot(freedomPercent, results);
         }
 
-        // ذخیره در دیتابیس مرکزی سایت (برای نمودار جمعی)
         async function saveToSiteDB(score) {
             try {
                 const geoRes = await fetch('/api/myip');
                 const geo = await geoRes.json();
                 document.getElementById('isp-name').textContent = geo.isp;
                 
-                // ارسال به API سایت برای ذخیره در KV
                 await fetch('/api/save_test', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ isp: geo.isp, score: score })
                 });
                 
-                // آپدیت نمودار جمعی
                 fetchAndDrawAggregateChart();
             } catch (e) { console.log("Error saving to DB:", e); }
         }
 
-        // دریافت داده‌های جمعی و رسم نمودار
         async function fetchAndDrawAggregateChart() {
             try {
                 const res = await fetch('/api/get_charts');
