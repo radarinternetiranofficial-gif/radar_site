@@ -28,7 +28,6 @@ export default {
     }
 
     const today = new Date().toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' });
-    
     const BOT_API_URL = "https://radar-bot.royal-trust-ir-official.workers.dev/api/report_test";
 
     const htmlContent = `
@@ -71,8 +70,25 @@ export default {
         .tab-content { display: none; animation: fadeIn 0.4s ease; flex: 1; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .page-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .page-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
         .page-header h1 { font-size: 2rem; font-weight: 900; margin-bottom: 10px; }
+        
+        /* 👇 استایل باکس هشدار رسمی 👇 */
+        .notice-box {
+            background: rgba(245, 158, 11, 0.08);
+            border-right: 4px solid var(--gold);
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 0.95rem;
+            color: var(--text);
+            line-height: 1.7;
+        }
+        .notice-box i { color: var(--gold); font-size: 1.3rem; margin-top: 3px; }
+        .notice-box b { color: var(--gold); }
         
         .card { background: var(--surface); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 16px; padding: 25px; margin-bottom: 20px; }
         
@@ -99,6 +115,12 @@ export default {
         .ip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 600px; margin: 20px 0; }
         .ip-card { background: rgba(0,0,0,0.3); border: 1px dashed var(--border); border-radius: 12px; padding: 15px; cursor: pointer; }
         .ip-badge { background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 8px 15px; border-radius: 50px; font-size: 0.85rem; margin: 5px; display: inline-flex; align-items: center; gap: 8px; }
+        
+        .info-box { background: rgba(245, 158, 11, 0.05); border-right: none; border-left: 4px solid var(--gold); padding: 25px; border-radius: 12px; margin-bottom: 30px; text-align: right; }
+        .info-box h3 { color: var(--gold); margin-bottom: 10px; font-size: 1.3rem; }
+        .info-box p { color: var(--muted); font-size: 0.95rem; line-height: 1.9; margin-bottom: 15px; }
+        .info-box ul { color: var(--muted); font-size: 0.95rem; padding-right: 20px; margin-bottom: 20px; }
+        .info-box li { margin-bottom: 8px; }
         
         .main-footer { border-top: 1px solid var(--border); padding-top: 20px; margin-top: auto; text-align: center; color: var(--muted); font-size: 0.85rem; }
         
@@ -138,6 +160,14 @@ export default {
                 </div>
             </div>
 
+            <!-- 👇 باکس هشدار رسمی (اینجا اضافه شد) 👇 -->
+            <div class="notice-box">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <div>
+                    <b>توجه مهم:</b> جهت دریافت داده‌های دقیق و منطبق با واقعیتِ شبکه اپراتور خود، لطفاً پیش از انجام تست، از <b>غیرفعال بودن سرویس‌های تغییردهندهٔ DNS</b> (مانند شکن، ۴۰۳، الکترو) و همچنین نرم‌افزارهای عبور از فیلترشکن، اطمینان حاصل فرمایید. در غیر این صورت، شاخص آزادی محاسبه‌شده، وضعیت واقعی اینترنت شما را نشان نخواهد داد.
+                </div>
+            </div>
+
             <div class="card" id="summary-card">
                 <div class="test-header">
                     <div class="isp-info">
@@ -174,10 +204,23 @@ export default {
         </div>
 
         <div id="ads" class="tab-content">
-            <div class="page-header"><div><h1>درخواست اسپانسری</h1><p>همکاری با رادار.</p></div></div>
-            <div class="card" style="text-align:center; padding: 40px;">
-                <p>برای ثبت درخواست تبلیغات یا اسپانسری، وارد ربات شوید.</p>
-                <a href="https://t.me/Radarinternetiranbot" class="btn-tg" style="margin-top:20px; display:inline-flex; width:auto;">ورود به ربات</a>
+            <div class="page-header"><div><h1>فرصت‌های همکاری و اسپانسری</h1><p>برند خود را به هزاران کاربر فعال و متخصص معرفی کنید.</p></div></div>
+            <div class="card" style="max-width: 700px; margin: 0 auto; text-align: center; padding: 40px 25px;">
+                <div class="info-box">
+                    <h3><i class="fa-solid fa-handshake"></i> چرا با رادار اینترنت ایران همکاری کنیم؟</h3>
+                    <p>پلتفرم «رادار اینترنت ایران» با ارائه داده‌های دقیق و لحظه‌ای از وضعیت شبکه، مخاطبان خاص و ارزشمندی را جذب کرده است. با همکاری با ما، می‌توانید برند، محصول یا خدمات خود را در معرض دید این جامعه هدف قرار دهید.</p>
+                    <ul>
+                        <li><b>تبلیغات:</b> درج بنر یا پست تبلیغاتی در کانال‌ها و ربات‌ها.</li>
+                        <li><b>اسپانسری:</b> همکاری داده‌ای و مالی برای توسعه زیرساخت‌ها.</li>
+                    </ul>
+                </div>
+
+                <h3 style="margin-bottom: 15px; font-size: 1.3rem;">برای ثبت درخواست، وارد ربات شوید</h3>
+                <p style="color: var(--muted); margin-bottom: 25px;">جهت حفظ امنیت و پیگیری سریع‌تر، فرم درخواست اسپانسری به داخل ربات تلگرام منتقل شده است. لطفاً از طریق دکمه زیر وارد ربات شده و گزینه «درخواست اسپانسری» را از منوی اصلی انتخاب کنید.</p>
+                
+                <a href="https://t.me/Radarinternetiranbot" target="_blank" class="btn-tg" style="display: inline-flex; width: auto; padding: 15px 40px; font-size: 1.1rem; background: var(--gold); color: #000;">
+                    <i class="fa-brands fa-telegram"></i> ورود به ربات و ارسال درخواست
+                </a>
             </div>
         </div>
 
@@ -198,21 +241,32 @@ export default {
             if(tabId === 'ip-tool') fetchIPs();
         }
 
-        function testSite(domain) {
-            return new Promise((resolve) => {
-                const start = performance.now();
-                const img = new Image();
-                const timeout = setTimeout(() => { img.src = ''; resolve({ success: false, time: 0 }); }, 4000); 
-                
-                img.onload = () => { clearTimeout(timeout); resolve({ success: true, time: Math.round(performance.now() - start) }); };
-                img.onerror = () => { clearTimeout(timeout); resolve({ success: false, time: 0 }); };
-                
-                // استفاده از فاوآیکون
-                img.src = 'https://' + domain + '/favicon.ico?t=' + Date.now();
-            });
+        async function testSite(domain) {
+            const start = performance.now();
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+            try {
+                await fetch('https://' + domain, {
+                    method: 'HEAD',
+                    mode: 'no-cors',
+                    signal: controller.signal,
+                    cache: 'no-store'
+                });
+                clearTimeout(timeoutId);
+                return { success: true, time: Math.round(performance.now() - start) };
+            } catch (error) {
+                clearTimeout(timeoutId);
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    const imgTimeout = setTimeout(() => { img.src = ''; resolve({ success: false, time: 0 }); }, 2000);
+                    img.onload = () => { clearTimeout(imgTimeout); resolve({ success: true, time: Math.round(performance.now() - start) }); };
+                    img.onerror = () => { clearTimeout(imgTimeout); resolve({ success: false, time: 0 }); };
+                    img.src = 'https://' + domain + '/favicon.ico?t=' + Date.now();
+                });
+            }
         }
 
-        // 👇 لیست جدید و کامل‌تر سایت‌های خارجی (۱۵ سایت) 👇
         const foreignSites = [
             { name: 'Instagram', domain: 'instagram.com', icon: 'fa-brands fa-instagram' },
             { name: 'Telegram', domain: 'telegram.org', icon: 'fa-brands fa-telegram' },
@@ -231,7 +285,6 @@ export default {
             { name: 'Spotify', domain: 'spotify.com', icon: 'fa-brands fa-spotify' }
         ];
 
-        // 👇 لیست جدید و کامل‌تر سایت‌های داخلی (۱۰ سایت) 👇
         const domesticSites = [
             { name: 'دیجی‌کالا', domain: 'digikala.com', icon: 'fa-solid fa-cart-shopping' },
             { name: 'دیوار', domain: 'divar.ir', icon: 'fa-solid fa-building' },
@@ -239,7 +292,7 @@ export default {
             { name: 'شاپرک', domain: 'shaparak.ir', icon: 'fa-solid fa-credit-card' },
             { name: 'آپارات', domain: 'aparat.com', icon: 'fa-solid fa-video' },
             { name: 'علی‌بابا', domain: 'alibaba.ir', icon: 'fa-solid fa-plane' },
-            { name: 'اسنپ', domain: 'snapp.ir', icon: 'fa-solid fa-car' }, // دامنه اصلی
+            { name: 'اسنپ', domain: 'snapp.ir', icon: 'fa-solid fa-car' },
             { name: 'بله', domain: 'bale.ai', icon: 'fa-solid fa-comment-dots' },
             { name: 'ایتا', domain: 'eitaa.com', icon: 'fa-solid fa-comments' },
             { name: 'شاد', domain: 'shad.ir', icon: 'fa-solid fa-school' }
